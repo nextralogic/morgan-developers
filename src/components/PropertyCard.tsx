@@ -45,12 +45,19 @@ const PropertyCard = ({ id, title, price, type, imageUrl, locationName, areaSqft
         {imageUrl ? (
           <img
             src={getOptimizedImageUrl(imageUrl, 480)}
+            data-fallback-src={imageUrl}
             alt={title}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
             width={400}
             height={300}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            onError={(e) => {
+              const fallback = e.currentTarget.dataset.fallbackSrc;
+              if (!fallback) return;
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = fallback;
+            }}
           />
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
