@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://xmcuearcjhezwdhizfys.supabase.co/functions/v1/sitemap
+Sitemap: https://ihvhkdfeicfemjurtham.supabase.co/functions/v1/sitemap

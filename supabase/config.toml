@@ -1,1 +1,4 @@
-project_id = "xmcuearcjhezwdhizfys"
+project_id = "ihvhkdfeicfemjurtham"
+
+[functions.sitemap]
+verify_jwt = false

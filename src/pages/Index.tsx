@@ -10,7 +10,8 @@ import PropertyCard from "@/components/PropertyCard";
 import { ArrowRight, TrendingUp } from "lucide-react";
 import heroBg from "@/assets/hero-bg.webp";
 import { getMostViewedProperties } from "@/services/analyticsService";
-import { usePageMeta, SITE_URL } from "@/lib/seo";
+import { usePageMeta } from "@/lib/seo/usePageMeta";
+import { SITE_URL } from "@/lib/seo/constants";
 
 const Index = () => {
   usePageMeta({

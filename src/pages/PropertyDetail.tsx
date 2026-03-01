@@ -15,7 +15,10 @@ import { MapPin, Ruler, ArrowLeft, Home, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ShareButtons from "@/components/ShareButtons";
 import { formatAreaWithUnit } from "@/lib/area-utils";
-import { usePageMeta, JsonLd, buildPropertyJsonLd, SITE_URL } from "@/lib/seo";
+import { usePageMeta } from "@/lib/seo/usePageMeta";
+import { SITE_URL } from "@/lib/seo/constants";
+import { buildPropertyJsonLd } from "@/lib/seo/propertyJsonld";
+import JsonLd from "@/lib/seo/StructuredDataScript";
 
 const PropertyDetail = () => {
   const { slug } = useParams<{ slug: string }>();

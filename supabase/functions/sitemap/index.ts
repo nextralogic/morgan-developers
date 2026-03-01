@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const SITE_URL = "https://golden-nepal-homes.lovable.app";
+const SITE_URL = (Deno.env.get("SITE_URL") ?? "https://example.com").replace(/\/$/, "");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

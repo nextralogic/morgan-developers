@@ -24,7 +24,7 @@ You'll be prompted for the database password.
 supabase db push
 ```
 
-This applies the migration in `supabase/migrations/00000000000000_full_schema_snapshot.sql` which creates:
+This applies all SQL migrations in `supabase/migrations/` and creates:
 
 - All enum types (`app_role`, `property_status`, `property_type`, `lead_source`, `lead_status`)
 - All tables with constraints, defaults, and foreign keys
@@ -34,7 +34,7 @@ This applies the migration in `supabase/migrations/00000000000000_full_schema_sn
 - All RLS policies for every table
 - Storage bucket `property-images` with RLS policies
 
-**Note:** If you already have incremental migrations from Lovable, you may want to use only this snapshot on a fresh project. For an existing project, use `supabase db push` carefully or reset with `supabase db reset`.
+**Alternative (fresh project only):** You can use `supabase/schema_snapshot.sql` as a single full-schema import in SQL Editor, but the default path for this repo is `supabase db push`.
 
 ---
 
@@ -49,9 +49,12 @@ supabase functions deploy sitemap
 
 Set required secrets for edge functions:
 
+`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are reserved platform secrets in hosted Supabase Edge Functions, so you don't set them manually.
+
+Set only your custom secrets:
+
 ```bash
-supabase secrets set SUPABASE_URL=https://<ref>.supabase.co
-supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
+supabase secrets set SITE_URL=https://<your-domain-or-host>
 # Optional (for email notifications):
 # supabase secrets set RESEND_API_KEY=re_xxx
 # supabase secrets set EMAIL_FROM=noreply@yourdomain.com
@@ -132,6 +135,6 @@ The `has_role()` function implements hierarchical checks:
 | Function | Purpose | Secrets Used |
 |---|---|---|
 | `lead-notification` | Builds notification summary when a lead is created | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
-| `sitemap` | Generates XML sitemap of published properties | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
+| `sitemap` | Generates XML sitemap of published properties | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SITE_URL` |
 
 Both functions are in `supabase/functions/` and deployable via `supabase functions deploy <name>`.

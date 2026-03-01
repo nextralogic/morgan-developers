@@ -1,74 +1,73 @@
-# Welcome to your Lovable project
+# Morgan Developers Real Estate App
 
-## Project info
+React + Vite frontend backed by Supabase (Auth, Postgres, Storage, Edge Functions).
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Tech Stack
 
-## How can I edit this code?
+- React + TypeScript + Vite
+- Tailwind + shadcn/ui
+- Supabase (`@supabase/supabase-js`)
 
-There are several ways of editing your application.
+## Local Development
 
-**Use Lovable**
+1. Install dependencies:
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+```bash
+npm install
+```
 
-Changes made via Lovable will be committed automatically to this repo.
+2. Create env file:
 
-**Use your preferred IDE**
+```bash
+cp .env.example .env
+```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+3. Fill `.env`:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+```env
+VITE_SUPABASE_URL=https://<project-ref>.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=<anon-key>
+VITE_SITE_URL=http://localhost:8080
+```
 
-Follow these steps:
+4. Start dev server:
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Backend Setup (Your Supabase Project)
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. Link project:
 
-**Use GitHub Codespaces**
+```bash
+supabase login
+supabase link --project-ref <project-ref>
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+2. Push migrations:
 
-## What technologies are used for this project?
+```bash
+supabase db push
+```
 
-This project is built with:
+3. Deploy functions:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```bash
+supabase functions deploy lead-notification
+supabase functions deploy sitemap
+```
 
-## How can I deploy this project?
+4. Set function secrets:
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+```bash
+supabase secrets set SITE_URL=https://<your-domain-or-host>
+```
 
-## Can I connect a custom domain to my Lovable project?
+`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are reserved and provided automatically by Supabase in hosted Edge Functions.
 
-Yes, you can!
+## Notes
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
-# morgan-developers
+- Storage bucket used by app: `property-images`
+- Sitemap endpoint: `https://<project-ref>.supabase.co/functions/v1/sitemap`
+- For full backend details, see `docs/backend-setup.md`.

@@ -15,7 +15,8 @@ import PropertyPagination from "@/components/PropertyPagination";
 import { searchProperties, filtersFromParams, filtersToParams, type PropertySearchFilters } from "@/services/propertySearchService";
 import type { NepalAddress } from "@/utils/nepalAddress";
 import { useState } from "react";
-import { usePageMeta, SITE_URL } from "@/lib/seo";
+import { usePageMeta } from "@/lib/seo/usePageMeta";
+import { SITE_URL } from "@/lib/seo/constants";
 
 const EMPTY_ADDRESS: NepalAddress = { province: "", district: "", municipality_or_city: "", ward: null, area_name: "" };
 
