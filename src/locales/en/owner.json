@@ -1,0 +1,124 @@
+{
+  "myProperties": {
+    "toasts": {
+      "deleteFailed": "Failed to delete property.",
+      "deleteSuccess": "Property deleted."
+    },
+    "header": {
+      "eyebrow": "Dashboard",
+      "title": "My Properties",
+      "description": "Manage your property listings."
+    },
+    "actions": {
+      "postProperty": "Post Property",
+      "postFirstProperty": "Post Your First Property",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "deleteTitle": "Delete property?",
+      "deleteDescription": "This will permanently delete \"{{title}}\" and all its images. This action cannot be undone."
+    },
+    "empty": {
+      "title": "No properties yet",
+      "description": "You haven't posted any properties yet. Get started by creating your first listing."
+    },
+    "status": {
+      "editDraftOnly": "Only draft properties can be edited"
+    }
+  },
+  "propertyForm": {
+    "toasts": {
+      "onlyOwn": "You can only edit your own properties.",
+      "draftOnly": "Only draft properties can be edited. Contact an admin for changes.",
+      "titleRequired": "Title is required.",
+      "publishLocationRequired": "Province, District, and Municipality are required to publish.",
+      "saveLocationFailed": "Failed to save location.",
+      "updateFailed": "Failed to update property.",
+      "createFailed": "Failed to create property.",
+      "updated": "Property updated!",
+      "created": "Property created!"
+    },
+    "header": {
+      "editEyebrow": "Edit",
+      "newEyebrow": "New Listing",
+      "editTitle": "Edit Property",
+      "newTitle": "Post a Property",
+      "editDescription": "Update your property listing details.",
+      "newDescription": "Create a new property listing. It will be saved as a draft for admin review."
+    },
+    "fields": {
+      "title": "Title *",
+      "titlePlaceholder": "e.g. Beautiful Land in Lalitpur",
+      "price": "Price (NPR) *",
+      "pricePlaceholder": "e.g. 5000000",
+      "areaUnit": "Area Unit",
+      "areaValue": "Area Value",
+      "areaValuePlaceholder": "e.g. 3",
+      "areaApprox": "≈ {{value}} sq.ft",
+      "type": "Type",
+      "status": "Status",
+      "onlyAdminStatus": "Only admins can change status",
+      "location": "Location",
+      "description": "Description",
+      "descriptionPlaceholder": "Describe the property, its features, and surroundings...",
+      "images": "Images"
+    },
+    "types": {
+      "land": "Land",
+      "house": "House",
+      "apartment": "Apartment"
+    },
+    "statuses": {
+      "draft": "Draft",
+      "published": "Published",
+      "sold": "Sold"
+    },
+    "actions": {
+      "saving": "Saving...",
+      "updateProperty": "Update Property",
+      "createProperty": "Create Property",
+      "cancel": "Cancel"
+    },
+    "areaUnits": {
+      "sq_feet": "Sq. Feet",
+      "sq_meter": "Sq. Meter",
+      "ropani": "Ropani",
+      "aana": "Aana",
+      "paisa": "Paisa",
+      "daam": "Daam",
+      "bigha": "Bigha",
+      "kattha": "Kattha",
+      "dhur": "Dhur",
+      "haat": "Haat",
+      "acres": "Acres"
+    }
+  },
+  "imageUpload": {
+    "toasts": {
+      "uploadFailed": "Failed to upload {{name}}",
+      "compressionFailed": "Compression failed.",
+      "pasteAdded_one": "1 image added from clipboard.",
+      "pasteAdded_other": "{{count}} images added from clipboard."
+    },
+    "statuses": {
+      "ready": "Ready",
+      "too_large": "Too large",
+      "compressing": "Compressing...",
+      "compressed": "Compressed",
+      "uploading": "Uploading...",
+      "uploaded": "Uploaded",
+      "failed": "Failed"
+    },
+    "primary": "Primary",
+    "upload": "Upload",
+    "compressAndUpload": "Compress & Upload",
+    "sizeHint": "To keep the platform fast and storage costs low, images must be 200KB or less.",
+    "pasteHint": "Copy an image and press Ctrl+V (Cmd+V on Mac) to add it instantly.",
+    "previewTitle": "Image Preview",
+    "previewAlt": "Property image preview",
+    "actions": {
+      "preview": "Preview image",
+      "setPrimary": "Set as primary image",
+      "remove": "Remove image"
+    }
+  }
+}

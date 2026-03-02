@@ -7,6 +7,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { useTranslation } from "react-i18next";
 
 interface PropertyPaginationProps {
   page: number;
@@ -34,24 +35,27 @@ function getPageNumbers(current: number, total: number): (number | "ellipsis")[]
 }
 
 const PropertyPagination = ({ page, totalPages, onPageChange }: PropertyPaginationProps) => {
+  const { t } = useTranslation("common");
   if (totalPages <= 1) return null;
 
   const pages = getPageNumbers(page, totalPages);
 
   return (
-    <Pagination className="mt-10">
+    <Pagination className="mt-10" aria-label={t("pagination.ariaLabel")}>
       <PaginationContent>
         <PaginationItem>
           <PaginationPrevious
             onClick={() => page > 1 && onPageChange(page - 1)}
             className={page <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+            label={t("pagination.previous")}
+            ariaLabel={t("pagination.previousAria")}
           />
         </PaginationItem>
 
         {pages.map((p, idx) =>
           p === "ellipsis" ? (
             <PaginationItem key={`ellipsis-${idx}`}>
-              <PaginationEllipsis />
+              <PaginationEllipsis label={t("pagination.morePages")} />
             </PaginationItem>
           ) : (
             <PaginationItem key={p}>
@@ -70,6 +74,8 @@ const PropertyPagination = ({ page, totalPages, onPageChange }: PropertyPaginati
           <PaginationNext
             onClick={() => page < totalPages && onPageChange(page + 1)}
             className={page >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+            label={t("pagination.next")}
+            ariaLabel={t("pagination.nextAria")}
           />
         </PaginationItem>
       </PaginationContent>

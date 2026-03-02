@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getProvinces, getDistricts, getMunicipalities, filterOptions, type NepalAddress } from "@/utils/nepalAddress";
+import { useTranslation } from "react-i18next";
 
 interface NepalAddressSelectProps {
   value: NepalAddress;
@@ -14,6 +15,7 @@ interface NepalAddressSelectProps {
 }
 
 const NepalAddressSelect = ({ value, onChange, compact = false, horizontal = false }: NepalAddressSelectProps) => {
+  const { t } = useTranslation("properties");
   const [provinceSearch, setProvinceSearch] = useState("");
   const [districtSearch, setDistrictSearch] = useState("");
   const [municipalitySearch, setMunicipalitySearch] = useState("");
@@ -48,7 +50,7 @@ const NepalAddressSelect = ({ value, onChange, compact = false, horizontal = fal
       {/* Province */}
       <div>
         <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Province {!compact && "*"}
+          {t("address.province")} {!compact && "*"}
         </Label>
         <Select
           value={value.province || "__none"}
@@ -57,19 +59,19 @@ const NepalAddressSelect = ({ value, onChange, compact = false, horizontal = fal
           }
         >
           <SelectTrigger className="mt-1">
-            <SelectValue placeholder="Select Province" />
+            <SelectValue placeholder={t("address.selectProvince")} />
           </SelectTrigger>
           <SelectContent>
             <div className="px-2 pb-1.5">
               <Input
-                placeholder="Search province…"
+                placeholder={t("address.searchProvince")}
                 className="h-8"
                 value={provinceSearch}
                 onChange={(e) => setProvinceSearch(e.target.value)}
                 onKeyDown={(e) => e.stopPropagation()}
               />
             </div>
-            <SelectItem value="__none">All Provinces</SelectItem>
+            <SelectItem value="__none">{t("address.allProvinces")}</SelectItem>
             {filteredProvinces.map((p) => (
               <SelectItem key={p.value} value={p.value}>
                 {p.label}
@@ -82,7 +84,7 @@ const NepalAddressSelect = ({ value, onChange, compact = false, horizontal = fal
       {/* District */}
       <div>
         <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          District {!compact && "*"}
+          {t("address.district")} {!compact && "*"}
         </Label>
         <Select
           value={value.district || "__none"}
@@ -92,19 +94,19 @@ const NepalAddressSelect = ({ value, onChange, compact = false, horizontal = fal
           disabled={!value.province}
         >
           <SelectTrigger className="mt-1">
-            <SelectValue placeholder={value.province ? "Select District" : "Select province first"} />
+            <SelectValue placeholder={value.province ? t("address.selectDistrict") : t("address.selectProvinceFirst")} />
           </SelectTrigger>
           <SelectContent>
             <div className="px-2 pb-1.5">
               <Input
-                placeholder="Search district…"
+                placeholder={t("address.searchDistrict")}
                 className="h-8"
                 value={districtSearch}
                 onChange={(e) => setDistrictSearch(e.target.value)}
                 onKeyDown={(e) => e.stopPropagation()}
               />
             </div>
-            <SelectItem value="__none">All Districts</SelectItem>
+            <SelectItem value="__none">{t("address.allDistricts")}</SelectItem>
             {filteredDistricts.map((d) => (
               <SelectItem key={d.value} value={d.value}>
                 {d.label}
@@ -117,7 +119,7 @@ const NepalAddressSelect = ({ value, onChange, compact = false, horizontal = fal
       {/* Municipality */}
       <div>
         <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Municipality / City {!compact && "*"}
+          {t("address.municipality")} {!compact && "*"}
         </Label>
         <Select
           value={value.municipality_or_city || "__none"}
@@ -127,19 +129,19 @@ const NepalAddressSelect = ({ value, onChange, compact = false, horizontal = fal
           disabled={!value.district}
         >
           <SelectTrigger className="mt-1">
-            <SelectValue placeholder={value.district ? "Select Municipality" : "Select district first"} />
+            <SelectValue placeholder={value.district ? t("address.selectMunicipality") : t("address.selectDistrictFirst")} />
           </SelectTrigger>
           <SelectContent>
             <div className="px-2 pb-1.5">
               <Input
-                placeholder="Search municipality…"
+                placeholder={t("address.searchMunicipality")}
                 className="h-8"
                 value={municipalitySearch}
                 onChange={(e) => setMunicipalitySearch(e.target.value)}
                 onKeyDown={(e) => e.stopPropagation()}
               />
             </div>
-            <SelectItem value="__none">All Municipalities</SelectItem>
+            <SelectItem value="__none">{t("address.allMunicipalities")}</SelectItem>
             {filteredMunicipalities.map((m) => (
               <SelectItem key={m.value} value={m.value}>
                 {m.label}
@@ -154,13 +156,13 @@ const NepalAddressSelect = ({ value, onChange, compact = false, horizontal = fal
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Ward (optional)
+              {t("address.wardOptional")}
             </Label>
             <Input
               type="number"
               min={1}
               max={35}
-              placeholder="e.g. 10"
+              placeholder={t("address.wardPlaceholder")}
               className="mt-1"
               value={value.ward ?? ""}
               onChange={(e) => {
@@ -171,10 +173,10 @@ const NepalAddressSelect = ({ value, onChange, compact = false, horizontal = fal
           </div>
           <div>
             <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Area Name (recommended)
+              {t("address.areaNameRecommended")}
             </Label>
             <Input
-              placeholder="e.g. New Baneshwor"
+              placeholder={t("address.areaNamePlaceholder")}
               className="mt-1"
               value={value.area_name ?? ""}
               onChange={(e) => onChange({ ...value, area_name: e.target.value })}

@@ -1,7 +1,7 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, type Dispatch, type SetStateAction } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Upload, X, Loader2, CheckCircle2, AlertTriangle, ImageDown } from "lucide-react";
+import { Upload, X, Loader2, CheckCircle2, AlertTriangle, ImageDown, Eye, Star } from "lucide-react";
 import {
   compressImageToTargetSize,
   formatFileSize,
@@ -9,6 +9,14 @@ import {
 } from "@/lib/image-compress";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const MAX_SIZE = 200 * 1024;
 
@@ -35,21 +43,41 @@ interface UploadedImage {
 interface ImageUploadQueueProps {
   userId: string;
   images: UploadedImage[];
-  onImagesChange: (images: UploadedImage[]) => void;
+  onImagesChange: Dispatch<SetStateAction<UploadedImage[]>>;
 }
 
-const STATUS_CONFIG: Record<FileStatus, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  ready: { label: "Ready", variant: "secondary" },
-  too_large: { label: "Too large", variant: "destructive" },
-  compressing: { label: "Compressing…", variant: "outline" },
-  compressed: { label: "Compressed", variant: "secondary" },
-  uploading: { label: "Uploading…", variant: "outline" },
-  uploaded: { label: "Uploaded", variant: "default" },
-  failed: { label: "Failed", variant: "destructive" },
+const getClipboardImageFiles = (clipboardData: DataTransfer | null): File[] => {
+  if (!clipboardData) return [];
+
+  return Array.from(clipboardData.items)
+    .filter((item) => item.type.startsWith("image/"))
+    .map((item, index) => {
+      const blob = item.getAsFile();
+      if (!blob) return null;
+
+      if (blob.name) return blob;
+
+      const extension = item.type.split("/")[1] || "png";
+      return new File([blob], `pasted-image-${Date.now()}-${index}.${extension}`, {
+        type: item.type || blob.type,
+      });
+    })
+    .filter((file): file is File => file !== null);
 };
 
 const ImageUploadQueue = ({ userId, images, onImagesChange }: ImageUploadQueueProps) => {
+  const { t } = useTranslation("owner");
   const [queue, setQueue] = useState<QueuedFile[]>([]);
+  const [previewImage, setPreviewImage] = useState<{ url: string; name?: string } | null>(null);
+  const statusConfig: Record<FileStatus, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+    ready: { label: t("imageUpload.statuses.ready"), variant: "secondary" },
+    too_large: { label: t("imageUpload.statuses.too_large"), variant: "destructive" },
+    compressing: { label: t("imageUpload.statuses.compressing"), variant: "outline" },
+    compressed: { label: t("imageUpload.statuses.compressed"), variant: "secondary" },
+    uploading: { label: t("imageUpload.statuses.uploading"), variant: "outline" },
+    uploaded: { label: t("imageUpload.statuses.uploaded"), variant: "default" },
+    failed: { label: t("imageUpload.statuses.failed"), variant: "destructive" },
+  };
 
   const updateQueueItem = useCallback((id: string, updates: Partial<QueuedFile>) => {
     setQueue((prev) => prev.map((f) => (f.id === id ? { ...f, ...updates } : f)));
@@ -63,51 +91,102 @@ const ImageUploadQueue = ({ userId, images, onImagesChange }: ImageUploadQueuePr
     });
   }, []);
 
+  const uploadFile = useCallback(
+    async (item: QueuedFile) => {
+      updateQueueItem(item.id, { status: "uploading" });
+      const file = item.uploadFile;
+      const ext = file.name.split(".").pop();
+      const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+      const { error } = await supabase.storage.from("property-images").upload(path, file);
+      if (error) {
+        const uploadError = t("imageUpload.toasts.uploadFailed", { name: item.originalFile.name });
+        updateQueueItem(item.id, { status: "failed", error: uploadError });
+        toast.error(uploadError);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage.from("property-images").getPublicUrl(path);
+      updateQueueItem(item.id, { status: "uploaded", uploadedUrl: urlData.publicUrl });
+
+      onImagesChange((prev) => [
+        ...prev,
+        { image_url: urlData.publicUrl, is_primary: prev.length === 0 },
+      ]);
+    },
+    [onImagesChange, t, updateQueueItem, userId]
+  );
+
+  const enqueueFiles = useCallback(
+    (files: File[]) => {
+      if (files.length === 0) return;
+
+      const newItems: QueuedFile[] = files.map((file) => {
+        const withinLimit = isWithinSizeLimit(file, MAX_SIZE);
+        return {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          originalFile: file,
+          uploadFile: file,
+          previewUrl: URL.createObjectURL(file),
+          originalSize: file.size,
+          currentSize: file.size,
+          status: withinLimit ? "ready" : "too_large",
+        };
+      });
+
+      setQueue((prev) => [...prev, ...newItems]);
+
+      // Auto-upload ready files
+      newItems
+        .filter((f) => f.status === "ready")
+        .forEach((f) => {
+          void uploadFile(f);
+        });
+    },
+    [uploadFile]
+  );
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
-    const newItems: QueuedFile[] = Array.from(files).map((file) => {
-      const withinLimit = isWithinSizeLimit(file, MAX_SIZE);
-      return {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        originalFile: file,
-        uploadFile: file,
-        previewUrl: URL.createObjectURL(file),
-        originalSize: file.size,
-        currentSize: file.size,
-        status: withinLimit ? "ready" : "too_large",
-      };
-    });
-
-    setQueue((prev) => [...prev, ...newItems]);
+    enqueueFiles(Array.from(files));
     e.target.value = "";
-
-    // Auto-upload ready files
-    newItems.filter((f) => f.status === "ready").forEach((f) => uploadFile(f));
   };
 
-  const uploadFile = async (item: QueuedFile) => {
-    updateQueueItem(item.id, { status: "uploading" });
-    const file = item.uploadFile;
-    const ext = file.name.split(".").pop();
-    const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const handleClipboardPaste = useCallback(
+    (clipboardData: DataTransfer | null) => {
+      const imageFiles = getClipboardImageFiles(clipboardData);
+      if (imageFiles.length === 0) return false;
 
-    const { error } = await supabase.storage.from("property-images").upload(path, file);
-    if (error) {
-      updateQueueItem(item.id, { status: "failed", error: error.message });
-      toast.error(`Failed to upload ${item.originalFile.name}`);
-      return;
+      enqueueFiles(imageFiles);
+      toast.success(t("imageUpload.toasts.pasteAdded", { count: imageFiles.length }));
+      return true;
+    },
+    [enqueueFiles, t]
+  );
+
+  const handlePaste = (event: React.ClipboardEvent<HTMLElement>) => {
+    const pasted = handleClipboardPaste(event.clipboardData);
+    if (pasted) {
+      event.preventDefault();
     }
-
-    const { data: urlData } = supabase.storage.from("property-images").getPublicUrl(path);
-    updateQueueItem(item.id, { status: "uploaded", uploadedUrl: urlData.publicUrl });
-
-    onImagesChange([
-      ...images,
-      { image_url: urlData.publicUrl, is_primary: images.length === 0 },
-    ]);
   };
+
+  useEffect(() => {
+    const onDocumentPaste = (event: ClipboardEvent) => {
+      if (event.defaultPrevented) return;
+      const pasted = handleClipboardPaste(event.clipboardData);
+      if (pasted) {
+        event.preventDefault();
+      }
+    };
+
+    document.addEventListener("paste", onDocumentPaste);
+    return () => {
+      document.removeEventListener("paste", onDocumentPaste);
+    };
+  }, [handleClipboardPaste]);
 
   const handleCompress = async (id: string) => {
     const item = queue.find((f) => f.id === id);
@@ -118,8 +197,9 @@ const ImageUploadQueue = ({ userId, images, onImagesChange }: ImageUploadQueuePr
     const result = await compressImageToTargetSize(item.originalFile, MAX_SIZE);
 
     if (!result.success) {
-      updateQueueItem(id, { status: "failed", error: result.error });
-      toast.error(result.error || "Compression failed.");
+      const compressionError = result.error || t("imageUpload.toasts.compressionFailed");
+      updateQueueItem(id, { status: "failed", error: compressionError });
+      toast.error(compressionError);
       return;
     }
 
@@ -142,35 +222,72 @@ const ImageUploadQueue = ({ userId, images, onImagesChange }: ImageUploadQueuePr
 
   // Existing uploaded images (from DB on edit)
   const removeExistingImage = (index: number) => {
-    const updated = images.filter((_, i) => i !== index);
-    if (updated.length > 0 && !updated.some((img) => img.is_primary)) updated[0].is_primary = true;
-    onImagesChange(updated);
+    onImagesChange((prev) => {
+      const updated = prev.filter((_, i) => i !== index);
+      if (updated.length > 0 && !updated.some((img) => img.is_primary)) {
+        updated[0] = { ...updated[0], is_primary: true };
+      }
+      return updated;
+    });
   };
 
   const setPrimary = (index: number) => {
-    onImagesChange(images.map((img, i) => ({ ...img, is_primary: i === index })));
+    onImagesChange((prev) => prev.map((img, i) => ({ ...img, is_primary: i === index })));
   };
 
   // Active queue items (not yet uploaded)
   const pendingQueue = queue.filter((f) => f.status !== "uploaded");
 
   return (
-    <div>
+    <div onPaste={handlePaste}>
       <div className="flex flex-wrap gap-3">
         {/* Existing uploaded images */}
         {images.map((img, i) => (
           <div key={i} className="group relative h-24 w-24 overflow-hidden rounded-lg border">
-            <img src={img.image_url} alt="" className="h-full w-full object-cover" />
+            <button
+              type="button"
+              onClick={() => setPreviewImage({ url: img.image_url })}
+              className="h-full w-full"
+              aria-label={t("imageUpload.actions.preview")}
+            >
+              <img src={img.image_url} alt={t("imageUpload.previewAlt")} className="h-full w-full object-cover" />
+            </button>
             {img.is_primary && (
               <span className="absolute bottom-0 left-0 right-0 bg-primary/80 px-1 text-center text-[10px] font-medium text-primary-foreground">
-                Primary
+                {t("imageUpload.primary")}
               </span>
             )}
             <div className="absolute inset-0 flex items-center justify-center gap-1 bg-foreground/40 opacity-0 transition-opacity group-hover:opacity-100">
+              <Button
+                type="button"
+                size="icon"
+                variant="secondary"
+                className="h-6 w-6"
+                onClick={() => setPreviewImage({ url: img.image_url })}
+                aria-label={t("imageUpload.actions.preview")}
+              >
+                <Eye className="h-3 w-3" />
+              </Button>
               {!img.is_primary && (
-                <Button type="button" size="icon" variant="secondary" className="h-6 w-6" onClick={() => setPrimary(i)}>★</Button>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  className="h-6 w-6"
+                  onClick={() => setPrimary(i)}
+                  aria-label={t("imageUpload.actions.setPrimary")}
+                >
+                  <Star className="h-3 w-3" />
+                </Button>
               )}
-              <Button type="button" size="icon" variant="destructive" className="h-6 w-6" onClick={() => removeExistingImage(i)}>
+              <Button
+                type="button"
+                size="icon"
+                variant="destructive"
+                className="h-6 w-6"
+                onClick={() => removeExistingImage(i)}
+                aria-label={t("imageUpload.actions.remove")}
+              >
                 <X className="h-3 w-3" />
               </Button>
             </div>
@@ -180,7 +297,7 @@ const ImageUploadQueue = ({ userId, images, onImagesChange }: ImageUploadQueuePr
         {/* Upload button */}
         <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed text-muted-foreground transition-colors hover:border-primary hover:text-primary">
           <Upload className="h-5 w-5" />
-          <span className="mt-1 text-[10px]">Upload</span>
+          <span className="mt-1 text-[10px]">{t("imageUpload.upload")}</span>
           <input type="file" accept="image/*" multiple className="hidden" onChange={handleFileSelect} />
         </label>
       </div>
@@ -189,10 +306,17 @@ const ImageUploadQueue = ({ userId, images, onImagesChange }: ImageUploadQueuePr
       {pendingQueue.length > 0 && (
         <div className="mt-4 space-y-2">
           {pendingQueue.map((item) => {
-            const cfg = STATUS_CONFIG[item.status];
+            const cfg = statusConfig[item.status];
             return (
               <div key={item.id} className="flex items-center gap-3 rounded-lg border bg-card p-3">
-                <img src={item.previewUrl} alt="" className="h-12 w-12 rounded object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setPreviewImage({ url: item.previewUrl, name: item.originalFile.name })}
+                  aria-label={t("imageUpload.actions.preview")}
+                  className="shrink-0"
+                >
+                  <img src={item.previewUrl} alt={t("imageUpload.previewAlt")} className="h-12 w-12 rounded object-cover" />
+                </button>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{item.originalFile.name}</p>
                   <p className="text-xs text-muted-foreground">
@@ -222,7 +346,7 @@ const ImageUploadQueue = ({ userId, images, onImagesChange }: ImageUploadQueuePr
                     onClick={() => handleCompress(item.id)}
                   >
                     <ImageDown className="h-3.5 w-3.5" />
-                    Compress & Upload
+                    {t("imageUpload.compressAndUpload")}
                   </Button>
                 )}
                 {(item.status === "too_large" || item.status === "failed") && (
@@ -243,8 +367,31 @@ const ImageUploadQueue = ({ userId, images, onImagesChange }: ImageUploadQueuePr
       )}
 
       <p className="mt-2 text-xs text-muted-foreground">
-        To keep the platform fast and storage costs low, images must be 200KB or less.
+        {t("imageUpload.sizeHint")}
       </p>
+      <p className="text-xs text-muted-foreground">
+        {t("imageUpload.pasteHint")}
+      </p>
+
+      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+        <DialogContent className="max-w-3xl overflow-hidden p-0">
+          <DialogHeader className="px-4 pt-4 pb-2">
+            <DialogTitle>{t("imageUpload.previewTitle")}</DialogTitle>
+            {previewImage?.name && (
+              <DialogDescription className="truncate">{previewImage.name}</DialogDescription>
+            )}
+          </DialogHeader>
+          <div className="bg-black/90">
+            {previewImage && (
+              <img
+                src={previewImage.url}
+                alt={t("imageUpload.previewAlt")}
+                className="max-h-[75vh] w-full object-contain"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

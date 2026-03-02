@@ -9,8 +9,10 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useTranslation } from "react-i18next";
 
 const Signup = () => {
+  const { t } = useTranslation("auth");
   const navigate = useNavigate();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -30,9 +32,9 @@ const Signup = () => {
     });
     setLoading(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(t("signup.toasts.genericError"));
     } else {
-      toast.success("Check your email to confirm your account!");
+      toast.success(t("signup.toasts.confirmEmail"));
       navigate("/login");
     }
   };
@@ -43,7 +45,7 @@ const Signup = () => {
       options: { redirectTo: window.location.origin },
     });
     if (error) {
-      toast.error("Google sign-in failed. Please try again.");
+      toast.error(t("signup.toasts.googleError"));
     }
   };
 
@@ -53,8 +55,8 @@ const Signup = () => {
       <div className="flex min-h-[80vh] items-center justify-center px-4">
         <Card className="w-full max-w-md rounded-xl shadow-lg">
           <CardHeader className="space-y-1 pb-2 text-center">
-            <CardTitle className="font-heading text-2xl">Create Account</CardTitle>
-            <CardDescription>Join Morgan Developers today</CardDescription>
+            <CardTitle className="font-heading text-2xl">{t("signup.title")}</CardTitle>
+            <CardDescription>{t("signup.description")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5 p-6 pt-4 md:p-8 md:pt-4">
             <Button variant="outline" className="w-full gap-2" onClick={handleGoogleSignup}>
@@ -64,38 +66,38 @@ const Signup = () => {
                 <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
               </svg>
-              Continue with Google
+              {t("signup.googleButton")}
             </Button>
 
             <div className="relative">
               <Separator />
               <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-xs text-muted-foreground">
-                or
+                {t("signup.dividerOr")}
               </span>
             </div>
 
             <form onSubmit={handleSignup} className="space-y-4">
               <div>
-                <Label htmlFor="name">Full Name</Label>
-                <Input id="name" className="mt-1.5" required value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your full name" />
+                <Label htmlFor="name">{t("signup.fullNameLabel")}</Label>
+                <Input id="name" className="mt-1.5" required value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={t("signup.fullNamePlaceholder")} />
               </div>
               <div>
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" className="mt-1.5" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+                <Label htmlFor="email">{t("signup.emailLabel")}</Label>
+                <Input id="email" className="mt-1.5" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("signup.emailPlaceholder")} />
               </div>
               <div>
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" className="mt-1.5" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+                <Label htmlFor="password">{t("signup.passwordLabel")}</Label>
+                <Input id="password" className="mt-1.5" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t("signup.passwordPlaceholder")} />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Creating account..." : "Create Account"}
+                {loading ? t("signup.submitting") : t("signup.submit")}
               </Button>
             </form>
 
             <p className="text-center text-sm text-muted-foreground">
-              Already have an account?{" "}
+              {t("signup.haveAccountPrefix")}{" "}
               <Link to="/login" className="font-medium text-primary hover:underline">
-                Sign In
+                {t("signup.signInLink")}
               </Link>
             </p>
           </CardContent>

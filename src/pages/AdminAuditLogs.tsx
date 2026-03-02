@@ -19,9 +19,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import PropertyPagination from "@/components/PropertyPagination";
+import { useTranslation } from "react-i18next";
 
-const ENTITY_TYPES = ["property", "lead", "user"];
-const ACTIONS = ["publish", "unpublish", "archive", "restore", "status_change", "edit", "note_update", "role_change"];
+const ENTITY_TYPES = ["property", "lead", "user"] as const;
+const ACTIONS = ["publish", "unpublish", "archive", "restore", "status_change", "edit", "note_update", "role_change"] as const;
 
 const ACTION_COLORS: Record<string, string> = {
   publish: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
@@ -38,7 +39,26 @@ interface Props {
 }
 
 const AdminAuditLogs = ({ enabled }: Props) => {
+  const { t, i18n } = useTranslation("admin");
+  const numberLocale = i18n.resolvedLanguage?.startsWith("ne") ? "ne-NP" : "en-US";
   const [filters, setFilters] = useState<AuditLogFilters>({ page: 1, pageSize: 25 });
+
+  const entityLabels: Record<(typeof ENTITY_TYPES)[number], string> = {
+    property: t("audit.entities.property"),
+    lead: t("audit.entities.lead"),
+    user: t("audit.entities.user"),
+  };
+
+  const actionLabels: Record<(typeof ACTIONS)[number], string> = {
+    publish: t("audit.actions.publish"),
+    unpublish: t("audit.actions.unpublish"),
+    archive: t("audit.actions.archive"),
+    restore: t("audit.actions.restore"),
+    status_change: t("audit.actions.status_change"),
+    edit: t("audit.actions.edit"),
+    note_update: t("audit.actions.note_update"),
+    role_change: t("audit.actions.role_change"),
+  };
 
   const { data: result, isLoading } = useQuery({
     queryKey: ["admin-audit-logs", filters],
@@ -60,62 +80,60 @@ const AdminAuditLogs = ({ enabled }: Props) => {
   return (
     <div>
       <div className="mb-6">
-        <h2 className="font-heading text-2xl font-bold">Audit Logs</h2>
+        <h2 className="font-heading text-2xl font-bold">{t("audit.header.title")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          {result?.totalCount ?? 0} log entries
+          {t("audit.header.total", { count: result?.totalCount ?? 0 })}
         </p>
       </div>
 
-      {/* Filters */}
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <Select
           value={filters.entity_type ?? "all"}
-          onValueChange={(v) => updateFilters({ entity_type: v === "all" ? undefined : v })}
+          onValueChange={(value) => updateFilters({ entity_type: value === "all" ? undefined : value })}
         >
           <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="All Entities" />
+            <SelectValue placeholder={t("audit.filters.allEntities")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Entities</SelectItem>
-            {ENTITY_TYPES.map((t) => (
-              <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>
+            <SelectItem value="all">{t("audit.filters.allEntities")}</SelectItem>
+            {ENTITY_TYPES.map((entity) => (
+              <SelectItem key={entity} value={entity}>{entityLabels[entity]}</SelectItem>
             ))}
           </SelectContent>
         </Select>
 
         <Select
           value={filters.action ?? "all"}
-          onValueChange={(v) => updateFilters({ action: v === "all" ? undefined : v })}
+          onValueChange={(value) => updateFilters({ action: value === "all" ? undefined : value })}
         >
           <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="All Actions" />
+            <SelectValue placeholder={t("audit.filters.allActions")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Actions</SelectItem>
-            {ACTIONS.map((a) => (
-              <SelectItem key={a} value={a} className="capitalize">{a.replace("_", " ")}</SelectItem>
+            <SelectItem value="all">{t("audit.filters.allActions")}</SelectItem>
+            {ACTIONS.map((action) => (
+              <SelectItem key={action} value={action}>{actionLabels[action]}</SelectItem>
             ))}
           </SelectContent>
         </Select>
 
         {hasFilters && (
           <Button variant="ghost" size="sm" onClick={() => setFilters({ page: 1, pageSize: 25 })}>
-            Clear
+            {t("audit.filters.clear")}
           </Button>
         )}
       </div>
 
-      {/* Table */}
       <div className="rounded-xl border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[160px]">Date</TableHead>
-              <TableHead className="w-[100px]">Entity</TableHead>
-              <TableHead className="w-[130px]">Action</TableHead>
-              <TableHead className="hidden md:table-cell">Entity ID</TableHead>
-              <TableHead className="hidden lg:table-cell">Details</TableHead>
-              <TableHead className="hidden md:table-cell w-[120px]">Performed By</TableHead>
+              <TableHead className="w-[160px]">{t("audit.table.date")}</TableHead>
+              <TableHead className="w-[100px]">{t("audit.table.entity")}</TableHead>
+              <TableHead className="w-[130px]">{t("audit.table.action")}</TableHead>
+              <TableHead className="hidden md:table-cell">{t("audit.table.entityId")}</TableHead>
+              <TableHead className="hidden lg:table-cell">{t("audit.table.details")}</TableHead>
+              <TableHead className="hidden md:table-cell w-[120px]">{t("audit.table.performedBy")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -130,31 +148,33 @@ const AdminAuditLogs = ({ enabled }: Props) => {
             ) : logs.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
-                  No audit logs found.
+                  {t("audit.table.noLogs")}
                 </TableCell>
               </TableRow>
             ) : (
               logs.map((log) => (
                 <TableRow key={log.id}>
-                  <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                    {new Date(log.performed_at).toLocaleString()}
+                  <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                    {new Date(log.performed_at).toLocaleString(numberLocale)}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="capitalize text-xs">{log.entity_type}</Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {t(`audit.entities.${log.entity_type}` as any, { defaultValue: log.entity_type })}
+                    </Badge>
                   </TableCell>
                   <TableCell>
-                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${ACTION_COLORS[log.action] ?? "bg-muted text-muted-foreground"}`}>
-                      {log.action.replace("_", " ")}
+                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${ACTION_COLORS[log.action] ?? "bg-muted text-muted-foreground"}`}>
+                      {t(`audit.actions.${log.action}` as any, { defaultValue: log.action })}
                     </span>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell font-mono text-xs text-muted-foreground truncate max-w-[120px]">
+                  <TableCell className="hidden max-w-[120px] truncate font-mono text-xs text-muted-foreground md:table-cell">
                     {log.entity_id.slice(0, 8)}…
                   </TableCell>
-                  <TableCell className="hidden lg:table-cell text-xs text-muted-foreground truncate max-w-[200px]">
-                    {log.metadata ? formatMetadata(log.metadata) : "—"}
+                  <TableCell className="hidden max-w-[200px] truncate text-xs text-muted-foreground lg:table-cell">
+                    {log.metadata ? formatMetadata(log.metadata, t) : t("audit.metadata.unavailable")}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground truncate max-w-[160px]">
-                    <span className="font-medium text-foreground">{log.profiles?.full_name ?? "Unknown"}</span>
+                  <TableCell className="hidden max-w-[160px] truncate text-xs text-muted-foreground md:table-cell">
+                    <span className="font-medium text-foreground">{log.profiles?.full_name ?? t("audit.table.unknownUser")}</span>
                     <br />
                     <span className="font-mono">{log.performed_by.slice(0, 8)}…</span>
                   </TableCell>
@@ -168,21 +188,29 @@ const AdminAuditLogs = ({ enabled }: Props) => {
       <PropertyPagination
         page={page}
         totalPages={totalPages}
-        onPageChange={(p) => updateFilters({ page: p })}
+        onPageChange={(nextPage) => updateFilters({ page: nextPage })}
       />
     </div>
   );
 };
 
-function formatMetadata(meta: Record<string, unknown>): string {
+function formatMetadata(meta: Record<string, unknown>, t: (key: string, options?: Record<string, unknown>) => string): string {
+  const statusLabel = (value: unknown) => {
+    if (typeof value !== "string") return "";
+    return t(`propertyStatuses.${value}`, { defaultValue: value });
+  };
+
   const parts: string[] = [];
   if (meta.previous_status && meta.new_status) {
-    parts.push(`${meta.previous_status} → ${meta.new_status}`);
+    parts.push(t("audit.metadata.statusTransition", {
+      previous: statusLabel(meta.previous_status),
+      next: statusLabel(meta.new_status),
+    }));
   }
   if (meta.title) {
     parts.push(String(meta.title));
   }
-  return parts.length > 0 ? parts.join(" · ") : JSON.stringify(meta).slice(0, 80);
+  return parts.length > 0 ? parts.join(" · ") : t("audit.metadata.unavailable");
 }
 
 export default AdminAuditLogs;

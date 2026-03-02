@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import type { PropertySearchFilters } from "@/services/propertySearchService";
+import { useTranslation } from "react-i18next";
 
 const formatPrice = (v: number) => {
   if (v >= 10_000_000) return `${(v / 10_000_000).toFixed(v % 10_000_000 === 0 ? 0 : 1)} Cr`;
@@ -17,13 +18,20 @@ interface ActiveFiltersProps {
 }
 
 const ActiveFilters = ({ filters, onUpdate, onReset }: ActiveFiltersProps) => {
+  const { t } = useTranslation(["properties", "common"]);
   const badges: { label: string; onRemove: () => void }[] = [];
+
+  const typeLabels: Record<string, string> = {
+    apartment: t("property.types.apartment", { ns: "common" }),
+    house: t("property.types.house", { ns: "common" }),
+    land: t("property.types.land", { ns: "common" }),
+  };
 
   if (filters.query) {
     badges.push({ label: `"${filters.query}"`, onRemove: () => onUpdate({ query: undefined }) });
   }
   if (filters.type) {
-    badges.push({ label: filters.type.charAt(0).toUpperCase() + filters.type.slice(1), onRemove: () => onUpdate({ type: undefined }) });
+    badges.push({ label: typeLabels[filters.type] ?? filters.type, onRemove: () => onUpdate({ type: undefined }) });
   }
   if (filters.province) {
     badges.push({ label: filters.province, onRemove: () => onUpdate({ province: undefined, district: undefined, municipalityOrCity: undefined }) });
@@ -38,7 +46,11 @@ const ActiveFilters = ({ filters, onUpdate, onReset }: ActiveFiltersProps) => {
     const min = filters.minPrice ?? 0;
     const max = filters.maxPrice ?? 50_000_000;
     badges.push({
-      label: `NPR ${formatPrice(min)} – ${formatPrice(max)}`,
+      label: t("filters.priceDisplay", {
+        ns: "properties",
+        min: formatPrice(min),
+        max: formatPrice(max),
+      }),
       onRemove: () => onUpdate({ minPrice: undefined, maxPrice: undefined }),
     });
   }
@@ -57,7 +69,7 @@ const ActiveFilters = ({ filters, onUpdate, onReset }: ActiveFiltersProps) => {
       ))}
       {badges.length > 1 && (
         <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={onReset}>
-          Clear all
+          {t("filters.clearAll", { ns: "properties" })}
         </Button>
       )}
     </div>

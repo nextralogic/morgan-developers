@@ -1,0 +1,108 @@
+{
+  "brand": {
+    "name": "Morgan Developers",
+    "tagline": "Premium real estate solutions in Nepal. Find your dream property with confidence and trusted guidance."
+  },
+  "nav": {
+    "home": "Home",
+    "properties": "Properties",
+    "myProperties": "My Properties",
+    "adminDashboard": "Admin Dashboard",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out",
+    "navigation": "Navigation"
+  },
+  "languageSwitcher": {
+    "ariaLabel": "Select language",
+    "label": "Language",
+    "languages": {
+      "en": "English",
+      "ne": "Nepali"
+    },
+    "short": {
+      "en": "EN",
+      "ne": "ने"
+    },
+    "switchTo": "Switch language to {{language}}"
+  },
+  "footer": {
+    "quickLinks": "Quick Links",
+    "contact": "Contact",
+    "contactItems": {
+      "location": "Kathmandu, Nepal",
+      "email": "info@morgandevelopers.com",
+      "phone": "+977-1-XXXXXXX"
+    },
+    "copyright": "© {{year}} Morgan Developers. All rights reserved."
+  },
+  "buttons": {
+    "viewAll": "View All",
+    "viewAllProperties": "View All Properties",
+    "backToHome": "Back to Home"
+  },
+  "property": {
+    "noImage": "No Image",
+    "labels": {
+      "id": "ID"
+    },
+    "types": {
+      "apartment": "Apartment",
+      "house": "House",
+      "land": "Land"
+    },
+    "statuses": {
+      "published": "Published",
+      "sold": "Sold",
+      "draft": "Draft"
+    }
+  },
+  "areaUnits": {
+    "sq_feet": "Sq. Feet",
+    "sq_meter": "Sq. Meter",
+    "ropani": "Ropani",
+    "aana": "Aana",
+    "paisa": "Paisa",
+    "daam": "Daam",
+    "bigha": "Bigha",
+    "kattha": "Kattha",
+    "dhur": "Dhur",
+    "haat": "Haat",
+    "acres": "Acres"
+  },
+  "area": {
+    "sqftValue": "{{value}} sq.ft",
+    "approxSqft": " (approx {{value}} sq.ft)"
+  },
+  "currency": {
+    "npr": "NPR {{amount}}"
+  },
+  "pagination": {
+    "ariaLabel": "Pagination",
+    "previous": "Previous",
+    "next": "Next",
+    "morePages": "More pages",
+    "previousAria": "Go to previous page",
+    "nextAria": "Go to next page"
+  },
+  "share": {
+    "label": "Share:",
+    "platforms": {
+      "facebook": "Facebook",
+      "messenger": "Messenger",
+      "whatsapp": "WhatsApp",
+      "viber": "Viber"
+    },
+    "shareOn": "Share on {{platform}}",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied to clipboard!",
+    "allowPopup": "Please allow popups to share."
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "description": "The page you're looking for doesn't exist or has been moved."
+  },
+  "misc": {
+    "location": "Location"
+  }
+}

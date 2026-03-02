@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "title": "सम्पत्तिहरू हेर्नुहोस्",
+    "description": "नेपालभरिका सूक्ष्म रूपमा छनोट गरिएका रियल इस्टेट सूचीहरू हेर्नुहोस् - अपार्टमेन्ट, घर र जग्गा।"
+  },
+  "header": {
+    "eyebrow": "ब्राउज",
+    "title": "सम्पत्तिहरू",
+    "description": "नेपालभरिका हाम्रो छनोट गरिएका सम्पत्ति सूचीहरू हेर्नुहोस्।"
+  },
+  "search": {
+    "placeholder": "शीर्षक वा स्थानबाट खोज्नुहोस्..."
+  },
+  "filters": {
+    "title": "फिल्टरहरू",
+    "location": "स्थान",
+    "propertyType": "सम्पत्तिको प्रकार",
+    "sortBy": "क्रमबद्ध",
+    "priceRange": "मूल्य दायरा (रु)",
+    "reset": "फिल्टर रिसेट गर्नुहोस्",
+    "clearAll": "सबै हटाउनुहोस्",
+    "allTypes": "सबै प्रकार",
+    "sortOptions": {
+      "newest": "नयाँ पहिले",
+      "priceLow": "मूल्य: कमदेखि बढी",
+      "priceHigh": "मूल्य: बढीदेखि कम",
+      "areaHigh": "क्षेत्रफल ↓"
+    },
+    "priceDisplay": "रु {{min}} - रु {{max}}"
+  },
+  "results": {
+    "noneTitle": "कुनै सम्पत्ति फेला परेन",
+    "noneDescription": "थप सूचीहरू फेला पार्न फिल्टर वा खोज शब्दहरू परिवर्तन गरेर हेर्नुहोस्।",
+    "clearAllFilters": "सबै फिल्टर हटाउनुहोस्",
+    "found_one": "{{count}} सम्पत्ति फेला पर्यो",
+    "found_other": "{{count}} सम्पत्तिहरू फेला परे",
+    "sortedBy": "· {{label}} अनुसार क्रमबद्ध"
+  },
+  "address": {
+    "province": "प्रदेश",
+    "district": "जिल्ला",
+    "municipality": "नगरपालिका / शहर",
+    "selectProvince": "प्रदेश चयन गर्नुहोस्",
+    "searchProvince": "प्रदेश खोज्नुहोस्...",
+    "allProvinces": "सबै प्रदेशहरू",
+    "selectDistrict": "जिल्ला चयन गर्नुहोस्",
+    "selectProvinceFirst": "पहिले प्रदेश चयन गर्नुहोस्",
+    "searchDistrict": "जिल्ला खोज्नुहोस्...",
+    "allDistricts": "सबै जिल्लाहरू",
+    "selectMunicipality": "नगरपालिका चयन गर्नुहोस्",
+    "selectDistrictFirst": "पहिले जिल्ला चयन गर्नुहोस्",
+    "searchMunicipality": "नगरपालिका खोज्नुहोस्...",
+    "allMunicipalities": "सबै नगरपालिकाहरू",
+    "wardOptional": "वडा (वैकल्पिक)",
+    "wardPlaceholder": "उदा. 10",
+    "areaNameRecommended": "क्षेत्रको नाम (सिफारिस)",
+    "areaNamePlaceholder": "उदा. नयाँ बानेश्वर"
+  }
+}

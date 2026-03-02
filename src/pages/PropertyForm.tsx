@@ -18,14 +18,17 @@ import NepalAddressSelect from "@/components/NepalAddressSelect";
 import { upsertLocation, getLocationById } from "@/services/locationService";
 import type { NepalAddress } from "@/utils/nepalAddress";
 import { AREA_UNITS, convertToSqft, type AreaUnit } from "@/lib/area-utils";
+import { useTranslation } from "react-i18next";
 
 const EMPTY_ADDRESS: NepalAddress = { province: "", district: "", municipality_or_city: "", ward: null, area_name: "" };
 
 const PropertyForm = () => {
+  const { t, i18n } = useTranslation(["owner", "common"]);
   const { id } = useParams<{ id: string }>();
   const isEdit = !!id;
   const navigate = useNavigate();
   const { user, loading: authLoading, isAdmin } = useAuth();
+  const numberLocale = i18n.resolvedLanguage?.startsWith("ne") ? "ne-NP" : "en-US";
 
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -96,25 +99,25 @@ const PropertyForm = () => {
     if (isEdit && existingProperty && !isAdmin) {
       // Non-admin: can only edit own draft properties
       if (existingProperty.created_by !== user?.id) {
-        toast.error("You can only edit your own properties.");
+        toast.error(t("propertyForm.toasts.onlyOwn", { ns: "owner" }));
         navigate("/my-properties");
       } else if (existingProperty.status !== "draft") {
-        toast.error("Only draft properties can be edited. Contact an admin for changes.");
+        toast.error(t("propertyForm.toasts.draftOnly", { ns: "owner" }));
         navigate("/my-properties");
       }
     }
-  }, [authLoading, user, existingProperty, isEdit, isAdmin, navigate]);
+  }, [authLoading, user, existingProperty, isEdit, isAdmin, navigate, t]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    if (!form.title.trim()) { toast.error("Title is required."); return; }
+    if (!form.title.trim()) { toast.error(t("propertyForm.toasts.titleRequired", { ns: "owner" })); return; }
 
     // Enforce draft-only for non-admins
     const statusToSave = isAdmin ? form.status : "draft";
 
     if (statusToSave === "published" && (!address.province || !address.district || !address.municipality_or_city)) {
-      toast.error("Province, District, and Municipality are required to publish.");
+      toast.error(t("propertyForm.toasts.publishLocationRequired", { ns: "owner" }));
       return;
     }
 
@@ -125,7 +128,7 @@ const PropertyForm = () => {
       try {
         locationId = await upsertLocation(address);
       } catch {
-        toast.error("Failed to save location.");
+        toast.error(t("propertyForm.toasts.saveLocationFailed", { ns: "owner" }));
         setSaving(false);
         return;
       }
@@ -155,11 +158,11 @@ const PropertyForm = () => {
 
     if (isEdit) {
       const { error } = await supabase.from("properties").update(propertyData as any).eq("id", id!);
-      if (error) { toast.error("Failed to update property."); setSaving(false); return; }
+      if (error) { toast.error(t("propertyForm.toasts.updateFailed", { ns: "owner" })); setSaving(false); return; }
       await supabase.from("property_images").delete().eq("property_id", id!);
     } else {
       const { data, error } = await supabase.from("properties").insert(propertyData as any).select("id, property_public_id").single();
-      if (error) { toast.error("Failed to create property."); setSaving(false); return; }
+      if (error) { toast.error(t("propertyForm.toasts.createFailed", { ns: "owner" })); setSaving(false); return; }
       propertyId = data.id;
     }
 
@@ -174,14 +177,24 @@ const PropertyForm = () => {
     }
 
     setSaving(false);
-    toast.success(isEdit ? "Property updated!" : "Property created!");
+    toast.success(isEdit ? t("propertyForm.toasts.updated", { ns: "owner" }) : t("propertyForm.toasts.created", { ns: "owner" }));
     navigate("/my-properties");
   };
 
   if (authLoading) return null;
 
   const canEditStatus = isAdmin;
-  const currentStatusLabel = form.status.charAt(0).toUpperCase() + form.status.slice(1);
+  const typeLabels: Record<"land" | "house" | "apartment", string> = {
+    land: t("property.types.land", { ns: "common" }),
+    house: t("property.types.house", { ns: "common" }),
+    apartment: t("property.types.apartment", { ns: "common" }),
+  };
+  const statusLabels: Record<"draft" | "published" | "sold", string> = {
+    draft: t("property.statuses.draft", { ns: "common" }),
+    published: t("property.statuses.published", { ns: "common" }),
+    sold: t("property.statuses.sold", { ns: "common" }),
+  };
+  const areaUnitKeys = Object.keys(AREA_UNITS) as AreaUnit[];
 
   return (
     <>
@@ -189,13 +202,13 @@ const PropertyForm = () => {
       <main className="container max-w-2xl page-padding">
         <div className="mb-8">
           <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-            {isEdit ? "Edit" : "New Listing"}
+            {isEdit ? t("propertyForm.header.editEyebrow", { ns: "owner" }) : t("propertyForm.header.newEyebrow", { ns: "owner" })}
           </p>
           <h1 className="mt-1 font-heading text-2xl font-bold md:text-3xl">
-            {isEdit ? "Edit Property" : "Post a Property"}
+            {isEdit ? t("propertyForm.header.editTitle", { ns: "owner" }) : t("propertyForm.header.newTitle", { ns: "owner" })}
           </h1>
           <p className="mt-2 text-muted-foreground">
-            {isEdit ? "Update your property listing details." : "Create a new property listing. It will be saved as a draft for admin review."}
+            {isEdit ? t("propertyForm.header.editDescription", { ns: "owner" }) : t("propertyForm.header.newDescription", { ns: "owner" })}
           </p>
         </div>
 
@@ -204,68 +217,98 @@ const PropertyForm = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Title */}
               <div>
-                <Label htmlFor="title">Title *</Label>
-                <Input id="title" className="mt-1.5" required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Beautiful Land in Lalitpur" />
+                <Label htmlFor="title">{t("propertyForm.fields.title", { ns: "owner" })}</Label>
+                <Input
+                  id="title"
+                  className="mt-1.5"
+                  required
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  placeholder={t("propertyForm.fields.titlePlaceholder", { ns: "owner" })}
+                />
               </div>
 
               {/* Price */}
               <div>
-                <Label htmlFor="price">Price (NPR) *</Label>
-                <Input id="price" className="mt-1.5" type="number" min="0" required value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="e.g. 5000000" />
+                <Label htmlFor="price">{t("propertyForm.fields.price", { ns: "owner" })}</Label>
+                <Input
+                  id="price"
+                  className="mt-1.5"
+                  type="number"
+                  min="0"
+                  required
+                  value={form.price}
+                  onChange={(e) => setForm({ ...form, price: e.target.value })}
+                  placeholder={t("propertyForm.fields.pricePlaceholder", { ns: "owner" })}
+                />
               </div>
 
               {/* Area Unit + Value */}
               <div className="grid gap-5 sm:grid-cols-2">
                 <div>
-                  <Label>Area Unit</Label>
+                  <Label>{t("propertyForm.fields.areaUnit", { ns: "owner" })}</Label>
                   <Select value={form.area_unit} onValueChange={(v) => setForm({ ...form, area_unit: v as AreaUnit })}>
                     <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {Object.entries(AREA_UNITS).map(([key, { label }]) => (
-                        <SelectItem key={key} value={key}>{label}</SelectItem>
+                      {areaUnitKeys.map((key) => (
+                        <SelectItem key={key} value={key}>
+                          {t(`areaUnits.${key}` as const, { ns: "common" })}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="area">Area Value</Label>
-                  <Input id="area" className="mt-1.5" type="number" min="0" step="any" value={form.area_value} onChange={(e) => setForm({ ...form, area_value: e.target.value })} placeholder="e.g. 3" />
+                  <Label htmlFor="area">{t("propertyForm.fields.areaValue", { ns: "owner" })}</Label>
+                  <Input
+                    id="area"
+                    className="mt-1.5"
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={form.area_value}
+                    onChange={(e) => setForm({ ...form, area_value: e.target.value })}
+                    placeholder={t("propertyForm.fields.areaValuePlaceholder", { ns: "owner" })}
+                  />
                 </div>
               </div>
               {form.area_value && (
                 <p className="text-sm text-muted-foreground -mt-3">
-                  ≈ {(convertToSqft(Number(form.area_value), form.area_unit) ?? 0).toLocaleString()} sq.ft
+                  {t("propertyForm.fields.areaApprox", {
+                    ns: "owner",
+                    value: (convertToSqft(Number(form.area_value), form.area_unit) ?? 0).toLocaleString(numberLocale),
+                  })}
                 </p>
               )}
 
               {/* Type + Status */}
               <div className="grid gap-5 sm:grid-cols-2">
                 <div>
-                  <Label>Type</Label>
+                  <Label>{t("propertyForm.fields.type", { ns: "owner" })}</Label>
                   <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v as any })}>
                     <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="land">Land</SelectItem>
-                      <SelectItem value="house">House</SelectItem>
-                      <SelectItem value="apartment">Apartment</SelectItem>
+                      <SelectItem value="land">{typeLabels.land}</SelectItem>
+                      <SelectItem value="house">{typeLabels.house}</SelectItem>
+                      <SelectItem value="apartment">{typeLabels.apartment}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label>Status</Label>
+                  <Label>{t("propertyForm.fields.status", { ns: "owner" })}</Label>
                   {canEditStatus ? (
                     <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as any })}>
                       <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="published">Published</SelectItem>
-                        <SelectItem value="sold">Sold</SelectItem>
+                        <SelectItem value="draft">{statusLabels.draft}</SelectItem>
+                        <SelectItem value="published">{statusLabels.published}</SelectItem>
+                        <SelectItem value="sold">{statusLabels.sold}</SelectItem>
                       </SelectContent>
                     </Select>
                   ) : (
                     <div className="mt-1.5 flex h-10 items-center gap-2 rounded-md border bg-muted/50 px-3">
-                      <Badge variant="outline" className="capitalize">{currentStatusLabel}</Badge>
-                      <span className="text-xs text-muted-foreground">Only admins can change status</span>
+                      <Badge variant="outline" className="capitalize">{statusLabels[form.status]}</Badge>
+                      <span className="text-xs text-muted-foreground">{t("propertyForm.fields.onlyAdminStatus", { ns: "owner" })}</span>
                     </div>
                   )}
                 </div>
@@ -273,19 +316,26 @@ const PropertyForm = () => {
 
               {/* Nepal Address */}
               <div className="rounded-xl border bg-muted/30 p-5">
-                <h3 className="mb-4 text-sm font-semibold">Location</h3>
+                <h3 className="mb-4 text-sm font-semibold">{t("propertyForm.fields.location", { ns: "owner" })}</h3>
                 <NepalAddressSelect value={address} onChange={setAddress} />
               </div>
 
               {/* Description */}
               <div>
-                <Label htmlFor="desc">Description</Label>
-                <Textarea id="desc" className="mt-1.5" rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Describe the property, its features, and surroundings..." />
+                <Label htmlFor="desc">{t("propertyForm.fields.description", { ns: "owner" })}</Label>
+                <Textarea
+                  id="desc"
+                  className="mt-1.5"
+                  rows={4}
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder={t("propertyForm.fields.descriptionPlaceholder", { ns: "owner" })}
+                />
               </div>
 
               {/* Images */}
               <div>
-                <Label>Images</Label>
+                <Label>{t("propertyForm.fields.images", { ns: "owner" })}</Label>
                 <div className="mt-2">
                   {user && (
                     <ImageUploadQueue
@@ -300,9 +350,15 @@ const PropertyForm = () => {
               {/* Actions */}
               <div className="flex gap-3 border-t pt-6">
                 <Button type="submit" disabled={saving} className="px-8">
-                  {saving ? "Saving..." : isEdit ? "Update Property" : "Create Property"}
+                  {saving
+                    ? t("propertyForm.actions.saving", { ns: "owner" })
+                    : isEdit
+                      ? t("propertyForm.actions.updateProperty", { ns: "owner" })
+                      : t("propertyForm.actions.createProperty", { ns: "owner" })}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => navigate("/my-properties")}>Cancel</Button>
+                <Button type="button" variant="outline" onClick={() => navigate("/my-properties")}>
+                  {t("propertyForm.actions.cancel", { ns: "owner" })}
+                </Button>
               </div>
             </form>
           </CardContent>

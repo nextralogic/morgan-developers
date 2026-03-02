@@ -24,8 +24,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useTranslation } from "react-i18next";
 
 const MyProperties = () => {
+  const { t } = useTranslation(["owner", "common"]);
   const { user, loading: authLoading, isAdmin } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -36,10 +38,10 @@ const MyProperties = () => {
     await supabase.from("property_images").delete().eq("property_id", propertyId);
     const { error } = await supabase.from("properties").delete().eq("id", propertyId);
     if (error) {
-      toast.error("Failed to delete property.");
+      toast.error(t("myProperties.toasts.deleteFailed", { ns: "owner" }));
       return;
     }
-    toast.success("Property deleted.");
+    toast.success(t("myProperties.toasts.deleteSuccess", { ns: "owner" }));
     queryClient.invalidateQueries({ queryKey: ["my-properties"] });
   };
 
@@ -64,18 +66,30 @@ const MyProperties = () => {
 
   if (authLoading) return null;
 
+  const typeLabels: Record<string, string> = {
+    land: t("property.types.land", { ns: "common" }),
+    house: t("property.types.house", { ns: "common" }),
+    apartment: t("property.types.apartment", { ns: "common" }),
+  };
+
+  const statusLabels: Record<string, string> = {
+    draft: t("property.statuses.draft", { ns: "common" }),
+    published: t("property.statuses.published", { ns: "common" }),
+    sold: t("property.statuses.sold", { ns: "common" }),
+  };
+
   return (
     <>
       <Navbar />
       <main className="container page-padding">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-primary">Dashboard</p>
-            <h1 className="mt-1 font-heading text-2xl font-bold md:text-3xl">My Properties</h1>
-            <p className="mt-2 text-muted-foreground">Manage your property listings.</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary">{t("myProperties.header.eyebrow", { ns: "owner" })}</p>
+            <h1 className="mt-1 font-heading text-2xl font-bold md:text-3xl">{t("myProperties.header.title", { ns: "owner" })}</h1>
+            <p className="mt-2 text-muted-foreground">{t("myProperties.header.description", { ns: "owner" })}</p>
           </div>
           <Button asChild className="gap-2 rounded-full px-5">
-            <Link to="/properties/new"><Plus className="h-4 w-4" /> Post Property</Link>
+            <Link to="/properties/new"><Plus className="h-4 w-4" /> {t("myProperties.actions.postProperty", { ns: "owner" })}</Link>
           </Button>
         </div>
 
@@ -89,10 +103,10 @@ const MyProperties = () => {
           ) : !properties || properties.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-xl border bg-card py-20 text-center">
               <Building2 className="h-10 w-10 text-muted-foreground/30" />
-              <p className="mt-4 font-heading text-lg font-semibold">No properties yet</p>
-              <p className="mt-1 max-w-xs text-sm text-muted-foreground">You haven't posted any properties yet. Get started by creating your first listing.</p>
+              <p className="mt-4 font-heading text-lg font-semibold">{t("myProperties.empty.title", { ns: "owner" })}</p>
+              <p className="mt-1 max-w-xs text-sm text-muted-foreground">{t("myProperties.empty.description", { ns: "owner" })}</p>
               <Button asChild className="mt-6 gap-2">
-                <Link to="/properties/new"><Plus className="h-4 w-4" /> Post Your First Property</Link>
+                <Link to="/properties/new"><Plus className="h-4 w-4" /> {t("myProperties.actions.postFirstProperty", { ns: "owner" })}</Link>
               </Button>
             </div>
           ) : (
@@ -108,7 +122,7 @@ const MyProperties = () => {
                         {imgUrl ? (
                           <img src={imgUrl} alt={p.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
                         ) : (
-                          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No Image</div>
+                          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">{t("property.noImage", { ns: "common" })}</div>
                         )}
                       </div>
                     </Link>
@@ -116,12 +130,12 @@ const MyProperties = () => {
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <div className="flex gap-1.5 mb-1.5">
-                            <Badge variant="secondary" className="capitalize text-xs">{p.type}</Badge>
+                            <Badge variant="secondary" className="capitalize text-xs">{typeLabels[p.type] ?? p.type}</Badge>
                             <Badge
                               variant={p.status === "published" ? "default" : p.status === "sold" ? "destructive" : "outline"}
                               className="capitalize text-xs"
                             >
-                              {p.status}
+                              {statusLabels[p.status] ?? p.status}
                             </Badge>
                           </div>
                           <Link to={buildPropertyUrl(p.title, (p as any).property_public_id)}>
@@ -131,7 +145,7 @@ const MyProperties = () => {
                             <p className="mt-0.5 text-xs text-muted-foreground">{(p.locations as any).name}</p>
                           )}
                           <p className="mt-2 font-heading font-bold text-primary">
-                            NPR {Number(p.price).toLocaleString()}
+                            {t("currency.npr", { ns: "common", amount: Number(p.price).toLocaleString() })}
                           </p>
                         </div>
                         <div className="flex shrink-0 flex-col gap-1">
@@ -142,7 +156,7 @@ const MyProperties = () => {
                               </Link>
                             </Button>
                           ) : (
-                            <Button size="icon" variant="ghost" className="rounded-full" disabled title="Only draft properties can be edited">
+                            <Button size="icon" variant="ghost" className="rounded-full" disabled title={t("myProperties.status.editDraftOnly", { ns: "owner" })}>
                               <Lock className="h-4 w-4" />
                             </Button>
                           )}
@@ -154,18 +168,18 @@ const MyProperties = () => {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Delete property?</AlertDialogTitle>
+                                <AlertDialogTitle>{t("myProperties.actions.deleteTitle", { ns: "owner" })}</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  This will permanently delete "{p.title}" and all its images. This action cannot be undone.
+                                  {t("myProperties.actions.deleteDescription", { ns: "owner", title: p.title })}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogCancel>{t("myProperties.actions.cancel", { ns: "owner" })}</AlertDialogCancel>
                                 <AlertDialogAction
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                   onClick={() => handleDelete(p.id)}
                                 >
-                                  Delete
+                                  {t("myProperties.actions.delete", { ns: "owner" })}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>

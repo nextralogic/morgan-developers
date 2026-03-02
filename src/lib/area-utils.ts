@@ -2,20 +2,36 @@
  * Supported area units and their conversion factors to sq.ft.
  */
 export const AREA_UNITS = {
-  sq_feet: { label: "Sq. Feet", toSqft: 1 },
-  sq_meter: { label: "Sq. Meter", toSqft: 10.7639 },
-  ropani: { label: "Ropani", toSqft: 5476 },
-  aana: { label: "Aana", toSqft: 342.25 },
-  paisa: { label: "Paisa", toSqft: 85.5625 },
-  daam: { label: "Daam", toSqft: 21.390625 },
-  bigha: { label: "Bigha", toSqft: 72900 },
-  kattha: { label: "Kattha", toSqft: 3645 },
-  dhur: { label: "Dhur", toSqft: 182.25 },
-  haat: { label: "Haat", toSqft: 2.25 },
-  acres: { label: "Acres", toSqft: 43560 },
+  sq_feet: { toSqft: 1 },
+  sq_meter: { toSqft: 10.7639 },
+  ropani: { toSqft: 5476 },
+  aana: { toSqft: 342.25 },
+  paisa: { toSqft: 85.5625 },
+  daam: { toSqft: 21.390625 },
+  bigha: { toSqft: 72900 },
+  kattha: { toSqft: 3645 },
+  dhur: { toSqft: 182.25 },
+  haat: { toSqft: 2.25 },
+  acres: { toSqft: 43560 },
 } as const;
 
 export type AreaUnit = keyof typeof AREA_UNITS;
+
+type TranslateFn = (...args: any[]) => string;
+
+const UNIT_FALLBACK_LABELS: Record<AreaUnit, string> = {
+  sq_feet: "Sq. Feet",
+  sq_meter: "Sq. Meter",
+  ropani: "Ropani",
+  aana: "Aana",
+  paisa: "Paisa",
+  daam: "Daam",
+  bigha: "Bigha",
+  kattha: "Kattha",
+  dhur: "Dhur",
+  haat: "Haat",
+  acres: "Acres",
+};
 
 /**
  * Convert a value in the given unit to sq.ft.
@@ -56,19 +72,44 @@ export function formatNepaliArea(sqft: number): string {
  * Format area for display using user's chosen unit with sq.ft as secondary.
  * e.g. "3 Kattha (approx 10,935 sq.ft)"
  */
-export function formatAreaWithUnit(value: number | null, unit: string | null, sqft: number | null): string {
+export function formatAreaWithUnit(
+  value: number | null,
+  unit: string | null,
+  sqft: number | null,
+  options?: {
+    t?: TranslateFn;
+    locale?: string;
+  }
+): string {
+  const t = options?.t;
+  const locale = options?.locale ?? "en-US";
   const unitKey = (unit || "sq_feet") as AreaUnit;
   const unitInfo = AREA_UNITS[unitKey];
+  const unitLabel = t ? t(`areaUnits.${unitKey}`, { ns: "common" }) : UNIT_FALLBACK_LABELS[unitKey];
 
   if (value != null && unitInfo && unitKey !== "sq_feet") {
     const approxSqft = sqft ?? convertToSqft(value, unitKey);
-    const sqftStr = approxSqft != null ? ` (approx ${Math.round(approxSqft).toLocaleString()} sq.ft)` : "";
-    return `${value} ${unitInfo.label}${sqftStr}`;
+    const valueText = value.toLocaleString(locale);
+    const sqftStr = approxSqft != null
+      ? (t
+        ? t("area.approxSqft", {
+            ns: "common",
+            value: Math.round(approxSqft).toLocaleString(locale),
+          })
+        : ` (approx ${Math.round(approxSqft).toLocaleString(locale)} sq.ft)`)
+      : "";
+    return `${valueText} ${unitLabel}${sqftStr}`;
   }
 
   // Fallback: sq_feet or missing unit
   const displaySqft = sqft ?? value ?? 0;
-  return `${Math.round(displaySqft).toLocaleString()} sq.ft`;
+  if (t) {
+    return t("area.sqftValue", {
+      ns: "common",
+      value: Math.round(displaySqft).toLocaleString(locale),
+    });
+  }
+  return `${Math.round(displaySqft).toLocaleString(locale)} sq.ft`;
 }
 
 /** Legacy helper – still used for filters/sorting display */

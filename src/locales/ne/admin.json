@@ -1,0 +1,226 @@
+{
+  "shared": {
+    "none": "—"
+  },
+  "propertyStatuses": {
+    "draft": "ड्राफ्ट",
+    "published": "प्रकाशित",
+    "sold": "बेचिएको"
+  },
+  "propertyTypes": {
+    "land": "जग्गा",
+    "house": "घर",
+    "apartment": "अपार्टमेन्ट"
+  },
+  "dashboard": {
+    "toasts": {
+      "accessDenied": "पहुँच अस्वीकृत।",
+      "statusUpdated": "स्थिति {{status}} मा अपडेट भयो",
+      "statusUpdateFailed": "स्थिति अपडेट गर्न असफल भयो।",
+      "propertyArchived": "सम्पत्ति अभिलेखित गरियो।",
+      "archiveFailed": "सम्पत्ति अभिलेखित गर्न असफल भयो।",
+      "propertyRestored": "सम्पत्ति पुनर्स्थापित गरियो।",
+      "restoreFailed": "सम्पत्ति पुनर्स्थापित गर्न असफल भयो।"
+    },
+    "checkingAccess": "पहुँच जाँच्दै...",
+    "header": {
+      "title": "एडमिन ड्यासबोर्ड",
+      "signOut": "साइन आउट"
+    },
+    "tabs": {
+      "properties": "सम्पत्तिहरू",
+      "leads": "लिडहरू",
+      "audit": "अडिट लगहरू",
+      "users": "प्रयोगकर्ताहरू"
+    },
+    "section": {
+      "title": "सम्पत्ति व्यवस्थापन",
+      "total": "कुल {{count}} सम्पत्ति"
+    },
+    "filters": {
+      "searchPlaceholder": "शीर्षक वा आईडीद्वारा खोज्नुहोस्...",
+      "search": "खोज्नुहोस्",
+      "allStatuses": "सबै स्थिति",
+      "allTypes": "सबै प्रकार",
+      "allVisibility": "सबै",
+      "active": "सक्रिय",
+      "archived": "अभिलेखित",
+      "clear": "हटाउनुहोस्"
+    },
+    "table": {
+      "id": "आईडी",
+      "title": "शीर्षक",
+      "type": "प्रकार",
+      "price": "मूल्य",
+      "status": "स्थिति",
+      "location": "स्थान",
+      "createdBy": "सिर्जना गर्ने",
+      "date": "मिति",
+      "actions": "कार्यहरू",
+      "noProperties": "कुनै सम्पत्ति फेला परेन।",
+      "archivedBadge": "अभिलेखित"
+    },
+    "rowActions": {
+      "view": "हेर्नुहोस्",
+      "edit": "सम्पादन",
+      "restore": "पुनर्स्थापना",
+      "archive": "अभिलेखित"
+    },
+    "dialogs": {
+      "soldTitle": "बेचिएको चिन्ह लगाउने?",
+      "soldDescription": "यसले \"{{title}}\" लाई बेचिएको रूपमा चिन्ह लगाउनेछ र सार्वजनिक सूचीबाट हटाउनेछ। जारी राख्ने?",
+      "soldConfirm": "बेचिएको चिन्ह लगाउनुहोस्",
+      "archiveTitle": "यो सम्पत्ति अभिलेखित गर्ने?",
+      "archiveDescription": "\"{{title}}\" साइटमा देखिनेछैन तर एडमिनले पुनर्स्थापित गर्न सक्नेछन्।",
+      "archiveConfirm": "अभिलेखित गर्नुहोस्",
+      "cancel": "रद्द गर्नुहोस्"
+    },
+    "topViewed": {
+      "title": "सबैभन्दा धेरै हेरिएका सम्पत्तिहरू"
+    }
+  },
+  "leads": {
+    "statuses": {
+      "new": "नयाँ",
+      "in_progress": "प्रक्रियामा",
+      "contacted": "सम्पर्क गरिएको",
+      "closed": "बन्द",
+      "archived": "अभिलेखित"
+    },
+    "contactTimes": {
+      "morning": "बिहान (९:०० - १२:००)",
+      "afternoon": "दिउँसो (१२:०० - ५:००)",
+      "evening": "साँझ (५:०० - ८:००)"
+    },
+    "sources": {
+      "website": "वेबसाइट",
+      "property_page": "सम्पत्ति पृष्ठ",
+      "direct": "प्रत्यक्ष",
+      "referral": "सिफारिस",
+      "unknown": "अज्ञात"
+    },
+    "toasts": {
+      "statusUpdated": "लिड स्थिति {{status}} मा अपडेट भयो",
+      "statusUpdateFailed": "लिड स्थिति अपडेट गर्न असफल भयो।",
+      "notesSaved": "नोटहरू सुरक्षित गरिए।",
+      "notesFailed": "नोटहरू सुरक्षित गर्न असफल भयो।"
+    },
+    "header": {
+      "title": "लिड व्यवस्थापन",
+      "total": "कुल {{count}} लिड"
+    },
+    "filters": {
+      "searchPlaceholder": "नाम, इमेल वा फोनद्वारा खोज्नुहोस्...",
+      "search": "खोज्नुहोस्",
+      "allStatuses": "सबै स्थिति",
+      "clear": "हटाउनुहोस्"
+    },
+    "table": {
+      "date": "मिति",
+      "name": "नाम",
+      "contact": "सम्पर्क",
+      "property": "सम्पत्ति",
+      "status": "स्थिति",
+      "source": "स्रोत",
+      "noLeads": "कुनै लिड फेला परेन।"
+    },
+    "detail": {
+      "property": "सम्पत्ति",
+      "viewProperty": "सम्पत्ति हेर्नुहोस्",
+      "message": "सन्देश",
+      "status": "स्थिति",
+      "internalNotes": "आन्तरिक नोटहरू",
+      "internalNotesPlaceholder": "यस लिडबारे आन्तरिक नोट थप्नुहोस्...",
+      "saveNotes": "नोट सेभ गर्नुहोस्",
+      "savingNotes": "सेभ हुँदै...",
+      "created": "सिर्जना:",
+      "updated": "अपडेट:",
+      "source": "स्रोत:"
+    }
+  },
+  "users": {
+    "roles": {
+      "super_admin": "सुपर एडमिन",
+      "admin": "एडमिन",
+      "moderator": "मोडरेटर",
+      "buyer": "खरिदकर्ता"
+    },
+    "toasts": {
+      "cannotRemoveLastSuperAdmin": "अन्तिम सुपर एडमिन हटाउन सकिँदैन।",
+      "rolesUpdated": "भूमिकाहरू सफलतापूर्वक अपडेट गरियो।",
+      "rolesUpdateFailed": "भूमिकाहरू अपडेट गर्न असफल भयो।"
+    },
+    "header": {
+      "title": "प्रयोगकर्ता व्यवस्थापन",
+      "description": "प्रयोगकर्ता भूमिका र अनुमति व्यवस्थापन गर्नुहोस्। केवल सुपर एडमिनले भूमिका परिवर्तन गर्न सक्छन्।"
+    },
+    "filter": {
+      "allRoles": "सबै भूमिकाहरू",
+      "clear": "हटाउनुहोस्"
+    },
+    "table": {
+      "name": "नाम",
+      "userId": "प्रयोगकर्ता आईडी",
+      "roles": "भूमिकाहरू",
+      "joined": "जोडिएको मिति",
+      "actions": "कार्यहरू",
+      "noUsers": "कुनै प्रयोगकर्ता फेला परेन।",
+      "unnamedUser": "नाम नभएको प्रयोगकर्ता",
+      "noRoles": "भूमिका छैन",
+      "editRoles": "भूमिका सम्पादन"
+    },
+    "dialog": {
+      "editTitle": "भूमिका सम्पादन - {{name}}",
+      "description": "यस प्रयोगकर्ताका लागि भूमिका चयन गर्नुहोस्। परिवर्तन तुरुन्त लागू हुन्छ।",
+      "cancel": "रद्द गर्नुहोस्",
+      "save": "भूमिका सेभ",
+      "saving": "सेभ हुँदै..."
+    },
+    "warning": {
+      "title": "सुपर एडमिनमा पदोन्नति गर्ने?",
+      "description": "यसले \"{{name}}\" लाई सबै भूमिका, प्रयोगकर्ता र प्रणाली सेटिङमाथि पूर्ण नियन्त्रण दिनेछ। यो सबैभन्दा उच्च अनुमति स्तर हो। तपाईं निश्चित हुनुहुन्छ?",
+      "cancel": "रद्द गर्नुहोस्",
+      "confirm": "पदोन्नति पुष्टि गर्नुहोस्"
+    }
+  },
+  "audit": {
+    "entities": {
+      "property": "सम्पत्ति",
+      "lead": "लिड",
+      "user": "प्रयोगकर्ता"
+    },
+    "actions": {
+      "publish": "प्रकाशित",
+      "unpublish": "अप्रकाशित",
+      "archive": "अभिलेखित",
+      "restore": "पुनर्स्थापना",
+      "status_change": "स्थिति परिवर्तन",
+      "edit": "सम्पादन",
+      "note_update": "नोट अपडेट",
+      "role_change": "भूमिका परिवर्तन"
+    },
+    "header": {
+      "title": "अडिट लगहरू",
+      "total": "कुल {{count}} लग प्रविष्टि"
+    },
+    "filters": {
+      "allEntities": "सबै इकाइहरू",
+      "allActions": "सबै कार्यहरू",
+      "clear": "हटाउनुहोस्"
+    },
+    "table": {
+      "date": "मिति",
+      "entity": "इकाइ",
+      "action": "कार्य",
+      "entityId": "इकाइ आईडी",
+      "details": "विवरण",
+      "performedBy": "कार्य गर्ने",
+      "noLogs": "कुनै अडिट लग फेला परेन।",
+      "unknownUser": "अज्ञात"
+    },
+    "metadata": {
+      "statusTransition": "{{previous}} -> {{next}}",
+      "unavailable": "विवरण उपलब्ध छैन"
+    }
+  }
+}

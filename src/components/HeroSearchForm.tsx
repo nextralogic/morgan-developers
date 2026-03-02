@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
@@ -7,14 +8,8 @@ import { Search } from "lucide-react";
 import { getProvinces, getDistricts, getMunicipalities, type NepalAddress } from "@/utils/nepalAddress";
 import { filtersToParams, type PropertySearchFilters } from "@/services/propertySearchService";
 
-const formatPrice = (v: number) => {
-  if (v >= 10_000_000) return `${(v / 10_000_000).toFixed(v % 10_000_000 === 0 ? 0 : 1)} Cr`;
-  if (v >= 100_000) return `${(v / 100_000).toFixed(v % 100_000 === 0 ? 0 : 1)} L`;
-  if (v >= 1000) return `${(v / 1000).toFixed(0)}K`;
-  return v.toLocaleString();
-};
-
 const HeroSearchForm = () => {
+  const { t } = useTranslation(["home", "common"]);
   const navigate = useNavigate();
   const [address, setAddress] = useState<NepalAddress>({ province: "", district: "", municipality_or_city: "", ward: null, area_name: "" });
   const [type, setType] = useState("all");
@@ -23,6 +18,28 @@ const HeroSearchForm = () => {
   const provinces = useMemo(() => getProvinces(), []);
   const districts = useMemo(() => getDistricts(address.province), [address.province]);
   const municipalities = useMemo(() => getMunicipalities(address.district), [address.district]);
+
+  const formatPrice = (value: number) => {
+    if (value >= 10_000_000) {
+      return t("search.priceUnits.crore", {
+        ns: "home",
+        value: (value / 10_000_000).toFixed(value % 10_000_000 === 0 ? 0 : 1),
+      });
+    }
+    if (value >= 100_000) {
+      return t("search.priceUnits.lakh", {
+        ns: "home",
+        value: (value / 100_000).toFixed(value % 100_000 === 0 ? 0 : 1),
+      });
+    }
+    if (value >= 1000) {
+      return t("search.priceUnits.thousand", {
+        ns: "home",
+        value: (value / 1000).toFixed(0),
+      });
+    }
+    return value.toLocaleString();
+  };
 
   const handleSearch = () => {
     const filters: PropertySearchFilters = {
@@ -42,7 +59,7 @@ const HeroSearchForm = () => {
       <div className="grid gap-3 grid-cols-2 sm:gap-4 lg:grid-cols-4">
         <div>
           <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-[11px]">
-            Province
+            {t("search.province", { ns: "home" })}
           </label>
           <Select
             value={address.province || "__none"}
@@ -50,9 +67,9 @@ const HeroSearchForm = () => {
               setAddress({ province: v === "__none" ? "" : v, district: "", municipality_or_city: "", ward: null, area_name: "" })
             }
           >
-            <SelectTrigger className="text-xs sm:text-sm"><SelectValue placeholder="All Provinces" /></SelectTrigger>
+            <SelectTrigger className="text-xs sm:text-sm"><SelectValue placeholder={t("search.allProvinces", { ns: "home" })} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none">All Provinces</SelectItem>
+              <SelectItem value="__none">{t("search.allProvinces", { ns: "home" })}</SelectItem>
               {provinces.map((p) => (
                 <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
               ))}
@@ -62,7 +79,7 @@ const HeroSearchForm = () => {
 
         <div>
           <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-[11px]">
-            District
+            {t("search.district", { ns: "home" })}
           </label>
           <Select
             value={address.district || "__none"}
@@ -71,9 +88,9 @@ const HeroSearchForm = () => {
             }
             disabled={!address.province}
           >
-            <SelectTrigger className="text-xs sm:text-sm"><SelectValue placeholder={address.province ? "All Districts" : "Province first"} /></SelectTrigger>
+            <SelectTrigger className="text-xs sm:text-sm"><SelectValue placeholder={address.province ? t("search.allDistricts", { ns: "home" }) : t("search.provinceFirst", { ns: "home" })} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none">All Districts</SelectItem>
+              <SelectItem value="__none">{t("search.allDistricts", { ns: "home" })}</SelectItem>
               {districts.map((d) => (
                 <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
               ))}
@@ -83,7 +100,7 @@ const HeroSearchForm = () => {
 
         <div>
           <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-[11px]">
-            Municipality
+            {t("search.municipality", { ns: "home" })}
           </label>
           <Select
             value={address.municipality_or_city || "__none"}
@@ -92,9 +109,9 @@ const HeroSearchForm = () => {
             }
             disabled={!address.district}
           >
-            <SelectTrigger className="text-xs sm:text-sm"><SelectValue placeholder={address.district ? "All" : "District first"} /></SelectTrigger>
+            <SelectTrigger className="text-xs sm:text-sm"><SelectValue placeholder={address.district ? t("search.allMunicipalities", { ns: "home" }) : t("search.districtFirst", { ns: "home" })} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none">All Municipalities</SelectItem>
+              <SelectItem value="__none">{t("search.allMunicipalities", { ns: "home" })}</SelectItem>
               {municipalities.map((m) => (
                 <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
               ))}
@@ -104,15 +121,15 @@ const HeroSearchForm = () => {
 
         <div>
           <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-[11px]">
-            Property Type
+            {t("search.propertyType", { ns: "home" })}
           </label>
           <Select value={type} onValueChange={setType}>
-            <SelectTrigger className="text-xs sm:text-sm"><SelectValue placeholder="All Types" /></SelectTrigger>
+            <SelectTrigger className="text-xs sm:text-sm"><SelectValue placeholder={t("search.allTypes", { ns: "home" })} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="apartment">Apartment</SelectItem>
-              <SelectItem value="house">House</SelectItem>
-              <SelectItem value="land">Land</SelectItem>
+              <SelectItem value="all">{t("search.allTypes", { ns: "home" })}</SelectItem>
+              <SelectItem value="apartment">{t("property.types.apartment", { ns: "common" })}</SelectItem>
+              <SelectItem value="house">{t("property.types.house", { ns: "common" })}</SelectItem>
+              <SelectItem value="land">{t("property.types.land", { ns: "common" })}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -122,7 +139,7 @@ const HeroSearchForm = () => {
       <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-6">
         <div className="flex-1 min-w-0">
           <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-[11px]">
-            Price Range (NPR)
+            {t("search.priceRange", { ns: "home" })}
           </label>
           <div className="rounded-lg border border-border/50 bg-muted/30 px-4 py-3">
             <Slider
@@ -133,15 +150,15 @@ const HeroSearchForm = () => {
               onValueChange={(v) => setPrice(v as [number, number])}
             />
             <div className="mt-2 flex justify-between text-[11px] font-medium text-foreground/70 sm:text-xs">
-              <span>NPR {formatPrice(price[0])}</span>
-              <span>NPR {formatPrice(price[1])}</span>
+              <span>{t("currency.npr", { ns: "common", amount: formatPrice(price[0]) })}</span>
+              <span>{t("currency.npr", { ns: "common", amount: formatPrice(price[1]) })}</span>
             </div>
           </div>
         </div>
 
         <Button onClick={handleSearch} className="h-11 w-full shrink-0 gap-2 rounded-xl sm:h-[48px] sm:w-auto sm:px-8" size="lg">
           <Search className="h-4 w-4" />
-          Search
+          {t("search.search", { ns: "home" })}
         </Button>
       </div>
     </div>

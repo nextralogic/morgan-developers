@@ -1,0 +1,32 @@
+{
+  "toast": {
+    "success": "जिज्ञासा सफलतापूर्वक पठाइयो! हामी छिट्टै सम्पर्क गर्नेछौं।",
+    "error": "जिज्ञासा पठाउन असफल भयो। कृपया फेरि प्रयास गर्नुहोस्।"
+  },
+  "success": {
+    "title": "धन्यवाद!",
+    "description": "हामीले तपाईंको जिज्ञासा प्राप्त गरेका छौं र छिट्टै सम्पर्क गर्नेछौं।",
+    "sendAnother": "अर्को जिज्ञासा पठाउनुहोस्"
+  },
+  "form": {
+    "fullNameLabel": "पुरा नाम *",
+    "fullNamePlaceholder": "तपाईंको नाम",
+    "emailLabel": "इमेल *",
+    "emailPlaceholder": "उदाहरण@इमेल.कॉम",
+    "phoneLabel": "फोन",
+    "phonePlaceholder": "+९७७-...",
+    "budgetLabel": "बजेट दायरा",
+    "budgetPlaceholder": "उदा. ५० लाख - १ करोड",
+    "preferredContactTimeLabel": "सम्पर्कका लागि उपयुक्त समय",
+    "preferredContactTimePlaceholder": "समय चयन गर्नुहोस्",
+    "contactTime": {
+      "morning": "बिहान (९:०० - १२:००)",
+      "afternoon": "दिउँसो (१२:०० - ५:००)",
+      "evening": "साँझ (५:०० - ८:००)"
+    },
+    "messageLabel": "सन्देश",
+    "messagePlaceholder": "तपाईं के खोजिरहनु भएको छ, बताउनुहोस्...",
+    "submitting": "पठाउँदै...",
+    "submit": "जिज्ञासा पठाउनुहोस्"
+  }
+}

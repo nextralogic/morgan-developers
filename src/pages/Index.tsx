@@ -12,11 +12,14 @@ import heroBg from "@/assets/hero-bg.webp";
 import { getMostViewedProperties } from "@/services/analyticsService";
 import { usePageMeta } from "@/lib/seo/usePageMeta";
 import { SITE_URL } from "@/lib/seo/constants";
+import { useTranslation } from "react-i18next";
 
 const Index = () => {
+  const { t } = useTranslation(["home", "common"]);
+
   usePageMeta({
-    title: "Premium Real Estate in Nepal",
-    description: "Find premium apartments, houses, and land in Nepal with Morgan Developers. Curated property listings for discerning buyers.",
+    title: t("meta.title", { ns: "home" }),
+    description: t("meta.description", { ns: "home" }),
     canonicalUrl: `${SITE_URL}/`,
     ogType: "website",
   });
@@ -49,7 +52,7 @@ const Index = () => {
         <section className="relative flex min-h-[75vh] items-center sm:min-h-[85vh]">
           <img
             src={heroBg}
-            alt="Kathmandu Valley with Himalayan mountains"
+            alt={t("hero.imageAlt", { ns: "home" })}
             className="absolute inset-0 h-full w-full object-cover"
             fetchPriority="high"
             sizes="100vw"
@@ -59,15 +62,15 @@ const Index = () => {
           <div className="container relative z-10 py-16 sm:py-24">
             <div className="max-w-2xl">
               <p className="text-xs font-medium uppercase tracking-widest text-primary-foreground/60 sm:text-sm">
-                Morgan Developers
+                {t("hero.eyebrow", { ns: "home" })}
               </p>
               <h1 className="mt-3 font-heading text-3xl font-bold leading-[1.1] text-primary-foreground sm:text-4xl md:text-5xl lg:text-6xl">
-                Find Your Dream
+                {t("hero.titleLine1", { ns: "home" })}
                 <br />
-                Property in Nepal
+                {t("hero.titleLine2", { ns: "home" })}
               </h1>
               <p className="mt-4 max-w-lg text-sm leading-relaxed text-primary-foreground/75 sm:mt-5 sm:text-base md:text-lg">
-                Premium apartments, houses, and land — curated for discerning buyers across Kathmandu Valley and beyond.
+                {t("hero.subtitle", { ns: "home" })}
               </p>
             </div>
 
@@ -82,15 +85,15 @@ const Index = () => {
           <div className="container">
             <div className="flex items-end justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-primary">Featured</p>
-                <h2 className="mt-1 font-heading">Featured Properties</h2>
+                <p className="text-xs font-semibold uppercase tracking-widest text-primary">{t("featured.eyebrow", { ns: "home" })}</p>
+                <h2 className="mt-1 font-heading">{t("featured.title", { ns: "home" })}</h2>
                 <p className="mt-2 max-w-md text-sm text-muted-foreground sm:text-base">
-                  Handpicked listings from the most sought-after locations.
+                  {t("featured.description", { ns: "home" })}
                 </p>
               </div>
               <Button asChild variant="ghost" className="hidden gap-1.5 sm:inline-flex">
                 <Link to="/properties">
-                  View All <ArrowRight className="h-4 w-4" />
+                  {t("buttons.viewAll", { ns: "common" })} <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
             </div>
@@ -126,7 +129,7 @@ const Index = () => {
             <div className="mt-8 text-center sm:hidden">
               <Button asChild variant="outline" className="gap-2">
                 <Link to="/properties">
-                  View All Properties <ArrowRight className="h-4 w-4" />
+                  {t("buttons.viewAllProperties", { ns: "common" })} <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
             </div>
@@ -140,11 +143,11 @@ const Index = () => {
               <div className="flex items-end justify-between gap-4">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-widest text-primary flex items-center gap-1.5">
-                    <TrendingUp className="h-3.5 w-3.5" /> Popular
+                    <TrendingUp className="h-3.5 w-3.5" /> {t("popular.eyebrow", { ns: "home" })}
                   </p>
-                  <h2 className="mt-1 font-heading">Most Viewed Properties</h2>
+                  <h2 className="mt-1 font-heading">{t("popular.title", { ns: "home" })}</h2>
                   <p className="mt-2 max-w-md text-sm text-muted-foreground sm:text-base">
-                    Properties attracting the most attention right now.
+                    {t("popular.description", { ns: "home" })}
                   </p>
                 </div>
               </div>

@@ -1,0 +1,226 @@
+{
+  "shared": {
+    "none": "—"
+  },
+  "propertyStatuses": {
+    "draft": "Draft",
+    "published": "Published",
+    "sold": "Sold"
+  },
+  "propertyTypes": {
+    "land": "Land",
+    "house": "House",
+    "apartment": "Apartment"
+  },
+  "dashboard": {
+    "toasts": {
+      "accessDenied": "Access denied.",
+      "statusUpdated": "Status updated to {{status}}",
+      "statusUpdateFailed": "Failed to update status.",
+      "propertyArchived": "Property archived.",
+      "archiveFailed": "Failed to archive property.",
+      "propertyRestored": "Property restored.",
+      "restoreFailed": "Failed to restore property."
+    },
+    "checkingAccess": "Checking access...",
+    "header": {
+      "title": "Admin Dashboard",
+      "signOut": "Sign Out"
+    },
+    "tabs": {
+      "properties": "Properties",
+      "leads": "Leads",
+      "audit": "Audit Logs",
+      "users": "Users"
+    },
+    "section": {
+      "title": "Property Management",
+      "total": "{{count}} properties total"
+    },
+    "filters": {
+      "searchPlaceholder": "Search by title or ID...",
+      "search": "Search",
+      "allStatuses": "All Statuses",
+      "allTypes": "All Types",
+      "allVisibility": "All",
+      "active": "Active",
+      "archived": "Archived",
+      "clear": "Clear"
+    },
+    "table": {
+      "id": "ID",
+      "title": "Title",
+      "type": "Type",
+      "price": "Price",
+      "status": "Status",
+      "location": "Location",
+      "createdBy": "Created By",
+      "date": "Date",
+      "actions": "Actions",
+      "noProperties": "No properties found.",
+      "archivedBadge": "Archived"
+    },
+    "rowActions": {
+      "view": "View",
+      "edit": "Edit",
+      "restore": "Restore",
+      "archive": "Archive"
+    },
+    "dialogs": {
+      "soldTitle": "Mark as Sold?",
+      "soldDescription": "This will mark \"{{title}}\" as sold and remove it from public listings. Continue?",
+      "soldConfirm": "Mark as Sold",
+      "archiveTitle": "Archive this property?",
+      "archiveDescription": "\"{{title}}\" will no longer appear on the site but can be restored by an admin.",
+      "archiveConfirm": "Archive",
+      "cancel": "Cancel"
+    },
+    "topViewed": {
+      "title": "Top Viewed Properties"
+    }
+  },
+  "leads": {
+    "statuses": {
+      "new": "New",
+      "in_progress": "In Progress",
+      "contacted": "Contacted",
+      "closed": "Closed",
+      "archived": "Archived"
+    },
+    "contactTimes": {
+      "morning": "Morning (9AM - 12PM)",
+      "afternoon": "Afternoon (12PM - 5PM)",
+      "evening": "Evening (5PM - 8PM)"
+    },
+    "sources": {
+      "website": "Website",
+      "property_page": "Property Page",
+      "direct": "Direct",
+      "referral": "Referral",
+      "unknown": "Unknown"
+    },
+    "toasts": {
+      "statusUpdated": "Lead status updated to {{status}}",
+      "statusUpdateFailed": "Failed to update lead status.",
+      "notesSaved": "Notes saved.",
+      "notesFailed": "Failed to save notes."
+    },
+    "header": {
+      "title": "Lead Management",
+      "total": "{{count}} leads total"
+    },
+    "filters": {
+      "searchPlaceholder": "Search by name, email, or phone...",
+      "search": "Search",
+      "allStatuses": "All Statuses",
+      "clear": "Clear"
+    },
+    "table": {
+      "date": "Date",
+      "name": "Name",
+      "contact": "Contact",
+      "property": "Property",
+      "status": "Status",
+      "source": "Source",
+      "noLeads": "No leads found."
+    },
+    "detail": {
+      "property": "Property",
+      "viewProperty": "View property",
+      "message": "Message",
+      "status": "Status",
+      "internalNotes": "Internal Notes",
+      "internalNotesPlaceholder": "Add internal notes about this lead...",
+      "saveNotes": "Save Notes",
+      "savingNotes": "Saving...",
+      "created": "Created:",
+      "updated": "Updated:",
+      "source": "Source:"
+    }
+  },
+  "users": {
+    "roles": {
+      "super_admin": "Super Admin",
+      "admin": "Admin",
+      "moderator": "Moderator",
+      "buyer": "Buyer"
+    },
+    "toasts": {
+      "cannotRemoveLastSuperAdmin": "Cannot remove the last super admin.",
+      "rolesUpdated": "Roles updated successfully.",
+      "rolesUpdateFailed": "Failed to update roles."
+    },
+    "header": {
+      "title": "User Management",
+      "description": "Manage user roles and permissions. Only super admins can modify roles."
+    },
+    "filter": {
+      "allRoles": "All Roles",
+      "clear": "Clear"
+    },
+    "table": {
+      "name": "Name",
+      "userId": "User ID",
+      "roles": "Roles",
+      "joined": "Joined",
+      "actions": "Actions",
+      "noUsers": "No users found.",
+      "unnamedUser": "Unnamed User",
+      "noRoles": "No roles",
+      "editRoles": "Edit Roles"
+    },
+    "dialog": {
+      "editTitle": "Edit Roles - {{name}}",
+      "description": "Select the roles for this user. Changes take effect immediately.",
+      "cancel": "Cancel",
+      "save": "Save Roles",
+      "saving": "Saving..."
+    },
+    "warning": {
+      "title": "Promote to Super Admin?",
+      "description": "This will grant \"{{name}}\" full control over all roles, users, and system settings. This is the highest privilege level. Are you sure?",
+      "cancel": "Cancel",
+      "confirm": "Confirm Promotion"
+    }
+  },
+  "audit": {
+    "entities": {
+      "property": "Property",
+      "lead": "Lead",
+      "user": "User"
+    },
+    "actions": {
+      "publish": "Publish",
+      "unpublish": "Unpublish",
+      "archive": "Archive",
+      "restore": "Restore",
+      "status_change": "Status Change",
+      "edit": "Edit",
+      "note_update": "Note Update",
+      "role_change": "Role Change"
+    },
+    "header": {
+      "title": "Audit Logs",
+      "total": "{{count}} log entries"
+    },
+    "filters": {
+      "allEntities": "All Entities",
+      "allActions": "All Actions",
+      "clear": "Clear"
+    },
+    "table": {
+      "date": "Date",
+      "entity": "Entity",
+      "action": "Action",
+      "entityId": "Entity ID",
+      "details": "Details",
+      "performedBy": "Performed By",
+      "noLogs": "No audit logs found.",
+      "unknownUser": "Unknown"
+    },
+    "metadata": {
+      "statusTransition": "{{previous}} -> {{next}}",
+      "unavailable": "Details unavailable"
+    }
+  }
+}

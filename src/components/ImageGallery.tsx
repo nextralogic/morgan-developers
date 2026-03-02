@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 interface ImageGalleryProps {
   images: { image_url: string; is_primary: boolean; display_order: number }[];
@@ -9,6 +10,7 @@ interface ImageGalleryProps {
 }
 
 const ImageGallery = ({ images, title }: ImageGalleryProps) => {
+  const { t } = useTranslation("propertyDetail");
   const sorted = [...images].sort((a, b) => {
     if (a.is_primary && !b.is_primary) return -1;
     if (!a.is_primary && b.is_primary) return 1;
@@ -20,7 +22,7 @@ const ImageGallery = ({ images, title }: ImageGalleryProps) => {
   if (sorted.length === 0) {
     return (
       <div className="aspect-video rounded-xl bg-muted flex items-center justify-center text-muted-foreground">
-        No images available
+        {t("gallery.noImages")}
       </div>
     );
   }
@@ -34,7 +36,7 @@ const ImageGallery = ({ images, title }: ImageGalleryProps) => {
       <div className="relative aspect-video overflow-hidden rounded-xl bg-muted">
         <img
           src={sorted[current].image_url}
-          alt={`${title} — image ${current + 1}`}
+          alt={t("gallery.imageAlt", { title, index: current + 1 })}
           className="h-full w-full object-cover"
         />
         {sorted.length > 1 && (

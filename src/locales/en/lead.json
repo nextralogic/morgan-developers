@@ -1,0 +1,32 @@
+{
+  "toast": {
+    "success": "Inquiry submitted! We'll be in touch soon.",
+    "error": "Failed to submit inquiry. Please try again."
+  },
+  "success": {
+    "title": "Thank You!",
+    "description": "We've received your inquiry and will contact you soon.",
+    "sendAnother": "Send Another Inquiry"
+  },
+  "form": {
+    "fullNameLabel": "Full Name *",
+    "fullNamePlaceholder": "Your name",
+    "emailLabel": "Email *",
+    "emailPlaceholder": "you@example.com",
+    "phoneLabel": "Phone",
+    "phonePlaceholder": "+977-...",
+    "budgetLabel": "Budget Range",
+    "budgetPlaceholder": "e.g. 50L - 1Cr",
+    "preferredContactTimeLabel": "Preferred Contact Time",
+    "preferredContactTimePlaceholder": "Select a time",
+    "contactTime": {
+      "morning": "Morning (9AM - 12PM)",
+      "afternoon": "Afternoon (12PM - 5PM)",
+      "evening": "Evening (5PM - 8PM)"
+    },
+    "messageLabel": "Message",
+    "messagePlaceholder": "Tell us what you're looking for...",
+    "submitting": "Submitting...",
+    "submit": "Send Inquiry"
+  }
+}

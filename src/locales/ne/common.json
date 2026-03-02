@@ -1,0 +1,108 @@
+{
+  "brand": {
+    "name": "मोर्गन डेभलपर्स",
+    "tagline": "नेपालमा प्रिमियम रियल इस्टेट समाधानहरू। आत्मविश्वास र भरपर्दो मार्गदर्शनका साथ आफ्नो सपनाको सम्पत्ति फेला पार्नुहोस्।"
+  },
+  "nav": {
+    "home": "होम",
+    "properties": "सम्पत्तिहरू",
+    "myProperties": "मेरा सम्पत्तिहरू",
+    "adminDashboard": "एडमिन ड्यासबोर्ड",
+    "signIn": "साइन इन",
+    "signUp": "साइन अप",
+    "signOut": "साइन आउट",
+    "navigation": "नेभिगेसन"
+  },
+  "languageSwitcher": {
+    "ariaLabel": "भाषा चयन गर्नुहोस्",
+    "label": "भाषा",
+    "languages": {
+      "en": "अंग्रेजी",
+      "ne": "नेपाली"
+    },
+    "short": {
+      "en": "EN",
+      "ne": "ने"
+    },
+    "switchTo": "भाषा {{language}} मा बदल्नुहोस्"
+  },
+  "footer": {
+    "quickLinks": "छिटो लिङ्कहरू",
+    "contact": "सम्पर्क",
+    "contactItems": {
+      "location": "काठमाडौं, नेपाल",
+      "email": "info@morgandevelopers.com",
+      "phone": "+977-1-XXXXXXX"
+    },
+    "copyright": "© {{year}} मोर्गन डेभलपर्स। सर्वाधिकार सुरक्षित।"
+  },
+  "buttons": {
+    "viewAll": "सबै हेर्नुहोस्",
+    "viewAllProperties": "सबै सम्पत्तिहरू हेर्नुहोस्",
+    "backToHome": "होममा फर्कनुहोस्"
+  },
+  "property": {
+    "noImage": "तस्बिर उपलब्ध छैन",
+    "labels": {
+      "id": "आईडी"
+    },
+    "types": {
+      "apartment": "अपार्टमेन्ट",
+      "house": "घर",
+      "land": "जग्गा"
+    },
+    "statuses": {
+      "published": "प्रकाशित",
+      "sold": "बेचिएको",
+      "draft": "मस्यौदा"
+    }
+  },
+  "areaUnits": {
+    "sq_feet": "वर्ग फिट",
+    "sq_meter": "वर्ग मिटर",
+    "ropani": "रोपनी",
+    "aana": "आना",
+    "paisa": "पैसा",
+    "daam": "दाम",
+    "bigha": "बिघा",
+    "kattha": "कट्ठा",
+    "dhur": "धुर",
+    "haat": "हात",
+    "acres": "एकड"
+  },
+  "area": {
+    "sqftValue": "{{value}} वर्ग फिट",
+    "approxSqft": " (करिब {{value}} वर्ग फिट)"
+  },
+  "currency": {
+    "npr": "रु {{amount}}"
+  },
+  "pagination": {
+    "ariaLabel": "पृष्ठक्रम",
+    "previous": "अघिल्लो",
+    "next": "अर्को",
+    "morePages": "थप पृष्ठहरू",
+    "previousAria": "अघिल्लो पृष्ठमा जानुहोस्",
+    "nextAria": "अर्को पृष्ठमा जानुहोस्"
+  },
+  "share": {
+    "label": "सेयर गर्नुहोस्:",
+    "platforms": {
+      "facebook": "फेसबुक",
+      "messenger": "मेसेन्जर",
+      "whatsapp": "व्हाट्सएप",
+      "viber": "भाइबर"
+    },
+    "shareOn": "{{platform}} मा सेयर गर्नुहोस्",
+    "copyLink": "लिङ्क कपी गर्नुहोस्",
+    "linkCopied": "लिङ्क क्लिपबोर्डमा कपी भयो!",
+    "allowPopup": "सेयर गर्न पपअप अनुमति दिनुहोस्।"
+  },
+  "notFound": {
+    "title": "पृष्ठ फेला परेन",
+    "description": "तपाईंले खोज्नुभएको पृष्ठ उपलब्ध छैन वा सारिएको छ।"
+  },
+  "misc": {
+    "location": "स्थान"
+  }
+}

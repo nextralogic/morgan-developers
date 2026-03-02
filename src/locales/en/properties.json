@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "title": "Browse Properties",
+    "description": "Browse curated real estate listings across Nepal - apartments, houses, and land from Morgan Developers."
+  },
+  "header": {
+    "eyebrow": "Browse",
+    "title": "Properties",
+    "description": "Browse our curated listings across Nepal."
+  },
+  "search": {
+    "placeholder": "Search by title or location..."
+  },
+  "filters": {
+    "title": "Filters",
+    "location": "Location",
+    "propertyType": "Property Type",
+    "sortBy": "Sort By",
+    "priceRange": "Price Range (NPR)",
+    "reset": "Reset Filters",
+    "clearAll": "Clear all",
+    "allTypes": "All Types",
+    "sortOptions": {
+      "newest": "Newest",
+      "priceLow": "Price: Low to High",
+      "priceHigh": "Price: High to Low",
+      "areaHigh": "Area ↓"
+    },
+    "priceDisplay": "NPR {{min}} - NPR {{max}}"
+  },
+  "results": {
+    "noneTitle": "No properties found",
+    "noneDescription": "Try adjusting your filters or search terms to discover more listings.",
+    "clearAllFilters": "Clear All Filters",
+    "found_one": "{{count}} property found",
+    "found_other": "{{count}} properties found",
+    "sortedBy": "· Sorted by {{label}}"
+  },
+  "address": {
+    "province": "Province",
+    "district": "District",
+    "municipality": "Municipality / City",
+    "selectProvince": "Select Province",
+    "searchProvince": "Search province...",
+    "allProvinces": "All Provinces",
+    "selectDistrict": "Select District",
+    "selectProvinceFirst": "Select province first",
+    "searchDistrict": "Search district...",
+    "allDistricts": "All Districts",
+    "selectMunicipality": "Select Municipality",
+    "selectDistrictFirst": "Select district first",
+    "searchMunicipality": "Search municipality...",
+    "allMunicipalities": "All Municipalities",
+    "wardOptional": "Ward (optional)",
+    "wardPlaceholder": "e.g. 10",
+    "areaNameRecommended": "Area Name (recommended)",
+    "areaNamePlaceholder": "e.g. New Baneshwor"
+  }
+}

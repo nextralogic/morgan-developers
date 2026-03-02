@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { logAction } from "@/services/auditService";
@@ -24,6 +24,7 @@ import PropertyPagination from "@/components/PropertyPagination";
 import { toast } from "sonner";
 import { Shield, ShieldAlert, ShieldCheck, User } from "lucide-react";
 import type { AppRole } from "@/contexts/AuthContext";
+import { useTranslation } from "react-i18next";
 
 const ALL_ROLES: AppRole[] = ["super_admin", "admin", "moderator", "buyer"];
 
@@ -55,6 +56,8 @@ interface Props {
 const PAGE_SIZE = 20;
 
 const AdminUserManagement = ({ enabled }: Props) => {
+  const { t, i18n } = useTranslation("admin");
+  const numberLocale = i18n.resolvedLanguage?.startsWith("ne") ? "ne-NP" : "en-US";
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [roleFilter, setRoleFilter] = useState<string>("all");
@@ -63,11 +66,16 @@ const AdminUserManagement = ({ enabled }: Props) => {
   const [saving, setSaving] = useState(false);
   const [superAdminWarning, setSuperAdminWarning] = useState(false);
 
-  // Fetch all profiles + their roles
+  const roleLabels: Record<AppRole, string> = {
+    super_admin: t("users.roles.super_admin"),
+    admin: t("users.roles.admin"),
+    moderator: t("users.roles.moderator"),
+    buyer: t("users.roles.buyer"),
+  };
+
   const { data: result, isLoading } = useQuery({
     queryKey: ["admin-users", page, roleFilter],
     queryFn: async () => {
-      // Fetch profiles
       const from = (page - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
 
@@ -79,7 +87,6 @@ const AdminUserManagement = ({ enabled }: Props) => {
 
       if (error) throw error;
 
-      // Fetch roles for these users
       const userIds = (profiles ?? []).map((p) => p.id);
       const { data: rolesData } = await supabase
         .from("user_roles")
@@ -100,7 +107,6 @@ const AdminUserManagement = ({ enabled }: Props) => {
         roles: roleMap.get(p.id) ?? [],
       }));
 
-      // Client-side role filter
       if (roleFilter !== "all") {
         users = users.filter((u) => u.roles.includes(roleFilter as AppRole));
       }
@@ -130,7 +136,6 @@ const AdminUserManagement = ({ enabled }: Props) => {
   const saveRoles = async () => {
     if (!editingUser) return;
 
-    // Check if adding super_admin and warn first
     if (selectedRoles.includes("super_admin") && !editingUser.roles.includes("super_admin") && !superAdminWarning) {
       setSuperAdminWarning(true);
       return;
@@ -141,14 +146,13 @@ const AdminUserManagement = ({ enabled }: Props) => {
       const toAdd = selectedRoles.filter((r) => !editingUser.roles.includes(r));
       const toRemove = editingUser.roles.filter((r) => !selectedRoles.includes(r));
 
-      // Safety: don't allow removing last super_admin
       if (toRemove.includes("super_admin")) {
         const { data: superAdmins } = await supabase
           .from("user_roles")
           .select("user_id")
           .eq("role", "super_admin");
         if ((superAdmins?.length ?? 0) <= 1) {
-          toast.error("Cannot remove the last super admin.");
+          toast.error(t("users.toasts.cannotRemoveLastSuperAdmin"));
           setSaving(false);
           return;
         }
@@ -168,7 +172,6 @@ const AdminUserManagement = ({ enabled }: Props) => {
           .insert({ user_id: editingUser.id, role: role as any });
       }
 
-      // Audit log
       if (toAdd.length > 0 || toRemove.length > 0) {
         logAction("user", editingUser.id, "role_change", {
           previous_roles: editingUser.roles,
@@ -178,54 +181,56 @@ const AdminUserManagement = ({ enabled }: Props) => {
         });
       }
 
-      toast.success("Roles updated successfully.");
+      toast.success(t("users.toasts.rolesUpdated"));
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       setEditingUser(null);
       setSuperAdminWarning(false);
-    } catch (err) {
-      toast.error("Failed to update roles.");
+    } catch {
+      toast.error(t("users.toasts.rolesUpdateFailed"));
     } finally {
       setSaving(false);
     }
   };
 
+  const editingUserName = editingUser?.full_name || t("users.table.unnamedUser");
+
   return (
     <div>
       <div className="mb-6">
-        <h2 className="font-heading text-2xl font-bold">User Management</h2>
+        <h2 className="font-heading text-2xl font-bold">{t("users.header.title")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage user roles and permissions. Only super admins can modify roles.
+          {t("users.header.description")}
         </p>
       </div>
 
-      {/* Filter */}
       <div className="mb-6 flex items-center gap-3">
-        <Select value={roleFilter} onValueChange={(v) => { setRoleFilter(v); setPage(1); }}>
+        <Select value={roleFilter} onValueChange={(value) => { setRoleFilter(value); setPage(1); }}>
           <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="All Roles" />
+            <SelectValue placeholder={t("users.filter.allRoles")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Roles</SelectItem>
-            {ALL_ROLES.map((r) => (
-              <SelectItem key={r} value={r} className="capitalize">{r.replace("_", " ")}</SelectItem>
+            <SelectItem value="all">{t("users.filter.allRoles")}</SelectItem>
+            {ALL_ROLES.map((role) => (
+              <SelectItem key={role} value={role}>{roleLabels[role]}</SelectItem>
             ))}
           </SelectContent>
         </Select>
         {roleFilter !== "all" && (
-          <Button variant="ghost" size="sm" onClick={() => setRoleFilter("all")}>Clear</Button>
+          <Button variant="ghost" size="sm" onClick={() => setRoleFilter("all")}>
+            {t("users.filter.clear")}
+          </Button>
         )}
       </div>
 
-      {/* Table */}
       <div className="rounded-xl border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>User ID</TableHead>
-              <TableHead>Roles</TableHead>
-              <TableHead className="hidden md:table-cell">Joined</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
+              <TableHead>{t("users.table.name")}</TableHead>
+              <TableHead>{t("users.table.userId")}</TableHead>
+              <TableHead>{t("users.table.roles")}</TableHead>
+              <TableHead className="hidden md:table-cell">{t("users.table.joined")}</TableHead>
+              <TableHead className="w-[100px]">{t("users.table.actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -240,42 +245,42 @@ const AdminUserManagement = ({ enabled }: Props) => {
             ) : users.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
-                  No users found.
+                  {t("users.table.noUsers")}
                 </TableCell>
               </TableRow>
             ) : (
-              users.map((u) => (
-                <TableRow key={u.id}>
+              users.map((user) => (
+                <TableRow key={user.id}>
                   <TableCell className="font-medium">
-                    {u.full_name || "Unnamed User"}
+                    {user.full_name || t("users.table.unnamedUser")}
                   </TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">
-                    {u.id.slice(0, 8)}…
+                    {user.id.slice(0, 8)}…
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {u.roles.length === 0 ? (
-                        <span className="text-xs text-muted-foreground">No roles</span>
+                      {user.roles.length === 0 ? (
+                        <span className="text-xs text-muted-foreground">{t("users.table.noRoles")}</span>
                       ) : (
-                        u.roles.map((r) => (
+                        user.roles.map((role) => (
                           <Badge
-                            key={r}
-                            className={`gap-1 text-[10px] capitalize ${ROLE_COLORS[r] ?? ""}`}
+                            key={role}
+                            className={`gap-1 text-[10px] ${ROLE_COLORS[role] ?? ""}`}
                             variant="outline"
                           >
-                            {ROLE_ICONS[r]}
-                            {r.replace("_", " ")}
+                            {ROLE_ICONS[role]}
+                            {roleLabels[role]}
                           </Badge>
                         ))
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
-                    {new Date(u.created_at).toLocaleDateString()}
+                  <TableCell className="hidden text-xs text-muted-foreground md:table-cell">
+                    {new Date(user.created_at).toLocaleDateString(numberLocale)}
                   </TableCell>
                   <TableCell>
-                    <Button variant="outline" size="sm" onClick={() => openRoleEditor(u)}>
-                      Edit Roles
+                    <Button variant="outline" size="sm" onClick={() => openRoleEditor(user)}>
+                      {t("users.table.editRoles")}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -287,13 +292,12 @@ const AdminUserManagement = ({ enabled }: Props) => {
 
       <PropertyPagination page={page} totalPages={totalPages} onPageChange={setPage} />
 
-      {/* Edit roles dialog */}
       <Dialog open={!!editingUser && !superAdminWarning} onOpenChange={(open) => !open && setEditingUser(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Roles — {editingUser?.full_name || "Unnamed User"}</DialogTitle>
+            <DialogTitle>{t("users.dialog.editTitle", { name: editingUserName })}</DialogTitle>
             <DialogDescription>
-              Select the roles for this user. Changes take effect immediately.
+              {t("users.dialog.description")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -304,36 +308,34 @@ const AdminUserManagement = ({ enabled }: Props) => {
                   checked={selectedRoles.includes(role)}
                   onCheckedChange={() => toggleRole(role)}
                 />
-                <Label htmlFor={`role-${role}`} className="flex items-center gap-2 capitalize cursor-pointer">
+                <Label htmlFor={`role-${role}`} className="flex cursor-pointer items-center gap-2">
                   {ROLE_ICONS[role]}
-                  {role.replace("_", " ")}
+                  {roleLabels[role]}
                 </Label>
               </div>
             ))}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingUser(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setEditingUser(null)}>{t("users.dialog.cancel")}</Button>
             <Button onClick={saveRoles} disabled={saving}>
-              {saving ? "Saving..." : "Save Roles"}
+              {saving ? t("users.dialog.saving") : t("users.dialog.save")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Super admin promotion warning */}
       <AlertDialog open={superAdminWarning} onOpenChange={(open) => !open && setSuperAdminWarning(false)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Promote to Super Admin?</AlertDialogTitle>
+            <AlertDialogTitle>{t("users.warning.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will grant "{editingUser?.full_name || "this user"}" full control over all roles,
-              users, and system settings. This is the highest privilege level. Are you sure?
+              {t("users.warning.description", { name: editingUserName })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setSuperAdminWarning(false)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setSuperAdminWarning(false)}>{t("users.warning.cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={saveRoles}>
-              Confirm Promotion
+              {t("users.warning.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

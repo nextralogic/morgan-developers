@@ -17,16 +17,18 @@ import type { NepalAddress } from "@/utils/nepalAddress";
 import { useState } from "react";
 import { usePageMeta } from "@/lib/seo/usePageMeta";
 import { SITE_URL } from "@/lib/seo/constants";
+import { useTranslation } from "react-i18next";
 
 const EMPTY_ADDRESS: NepalAddress = { province: "", district: "", municipality_or_city: "", ward: null, area_name: "" };
 
 const Properties = () => {
+  const { t } = useTranslation(["properties", "common"]);
   const [searchParams, setSearchParams] = useSearchParams();
   const [filterOpen, setFilterOpen] = useState(false);
 
   usePageMeta({
-    title: "Browse Properties",
-    description: "Browse curated real estate listings across Nepal — apartments, houses, and land from Morgan Developers.",
+    title: t("meta.title", { ns: "properties" }),
+    description: t("meta.description", { ns: "properties" }),
     canonicalUrl: `${SITE_URL}/properties`,
     ogType: "website",
   });
@@ -101,9 +103,9 @@ const Properties = () => {
       <Navbar />
       <main className="container page-padding">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-primary">Browse</p>
-          <h1 className="mt-1 font-heading">Properties</h1>
-          <p className="mt-2 max-w-md text-muted-foreground">Browse our curated listings across Nepal.</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary">{t("header.eyebrow", { ns: "properties" })}</p>
+          <h1 className="mt-1 font-heading">{t("header.title", { ns: "properties" })}</h1>
+          <p className="mt-2 max-w-md text-muted-foreground">{t("header.description", { ns: "properties" })}</p>
         </div>
 
         <div className="mt-6 flex items-center gap-3">
@@ -126,7 +128,7 @@ const Properties = () => {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-[320px] overflow-y-auto p-0">
-              <SheetTitle className="sr-only">Filters</SheetTitle>
+              <SheetTitle className="sr-only">{t("filters.title", { ns: "properties" })}</SheetTitle>
               <div className="p-6">{filterSidebarContent}</div>
             </SheetContent>
           </Sheet>
@@ -155,21 +157,29 @@ const Properties = () => {
             ) : paginated.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-xl border bg-card py-20 text-center">
                 <SearchX className="h-10 w-10 text-muted-foreground/40" />
-                <p className="mt-4 font-heading text-lg font-semibold">No properties found</p>
+                <p className="mt-4 font-heading text-lg font-semibold">{t("results.noneTitle", { ns: "properties" })}</p>
                 <p className="mt-1 max-w-xs text-sm text-muted-foreground">
-                  Try adjusting your filters or search terms to discover more listings.
+                  {t("results.noneDescription", { ns: "properties" })}
                 </p>
                 <Button variant="outline" size="sm" className="mt-5" onClick={resetFilters}>
-                  Clear All Filters
+                  {t("results.clearAllFilters", { ns: "properties" })}
                 </Button>
               </div>
             ) : (
               <>
                 <p className="mb-5 text-sm text-muted-foreground">
-                  {totalCount} {totalCount === 1 ? "property" : "properties"} found
+                  {t("results.found", { ns: "properties", count: totalCount })}
                   {filters.sort && filters.sort !== "newest" && (
                     <span className="ml-1">
-                      · Sorted by {filters.sort === "price_low" ? "Price ↑" : filters.sort === "price_high" ? "Price ↓" : "Area ↓"}
+                      {t("results.sortedBy", {
+                        ns: "properties",
+                        label:
+                          filters.sort === "price_low"
+                            ? t("filters.sortOptions.priceLow", { ns: "properties" })
+                            : filters.sort === "price_high"
+                              ? t("filters.sortOptions.priceHigh", { ns: "properties" })
+                              : t("filters.sortOptions.areaHigh", { ns: "properties" }),
+                      })}
                     </span>
                   )}
                 </p>

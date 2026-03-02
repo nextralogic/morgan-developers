@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "title": "Premium Real Estate in Nepal",
+    "description": "Find premium apartments, houses, and land in Nepal with Morgan Developers. Curated property listings for discerning buyers."
+  },
+  "hero": {
+    "imageAlt": "Kathmandu Valley with Himalayan mountains",
+    "eyebrow": "Morgan Developers",
+    "titleLine1": "Find Your Dream",
+    "titleLine2": "Property in Nepal",
+    "subtitle": "Premium apartments, houses, and land - curated for discerning buyers across Kathmandu Valley and beyond."
+  },
+  "search": {
+    "province": "Province",
+    "district": "District",
+    "municipality": "Municipality",
+    "propertyType": "Property Type",
+    "priceRange": "Price Range (NPR)",
+    "allProvinces": "All Provinces",
+    "allDistricts": "All Districts",
+    "provinceFirst": "Province first",
+    "allMunicipalities": "All Municipalities",
+    "districtFirst": "District first",
+    "allTypes": "All Types",
+    "search": "Search",
+    "priceUnits": {
+      "crore": "{{value}} Cr",
+      "lakh": "{{value}} L",
+      "thousand": "{{value}}K"
+    }
+  },
+  "featured": {
+    "eyebrow": "Featured",
+    "title": "Featured Properties",
+    "description": "Handpicked listings from the most sought-after locations."
+  },
+  "popular": {
+    "eyebrow": "Popular",
+    "title": "Most Viewed Properties",
+    "description": "Properties attracting the most attention right now."
+  }
+}

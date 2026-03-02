@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "propertyFallbackTitle": "सम्पत्ति",
+    "propertyFallbackDescription": "मोर्गन डेभलपर्समा सम्पत्ति सूची",
+    "priceSnippet": "नेपालमा बिक्रीका लागि {{type}} - रु {{price}}"
+  },
+  "errors": {
+    "propertyNotFound": "सम्पत्ति फेला परेन",
+    "propertyUnavailable": "यो सम्पत्ति हटाइएको हुन सक्छ वा अब उपलब्ध छैन।"
+  },
+  "actions": {
+    "backToListings": "सूचीमा फर्कनुहोस्",
+    "allProperties": "सबै सम्पत्तिहरू"
+  },
+  "labels": {
+    "id": "आईडी",
+    "area": "क्षेत्रफल",
+    "type": "प्रकार",
+    "status": "स्थिति",
+    "description": "विवरण",
+    "amenities": "सुविधाहरू",
+    "location": "स्थान"
+  },
+  "location": {
+    "ward": "वडा {{ward}}",
+    "mapSoon": "इन्टरेक्टिभ नक्सा चाँडै उपलब्ध हुनेछ",
+    "fallback": "स्थान"
+  },
+  "leadCard": {
+    "title": "यो सम्पत्तिमा रुचि छ?",
+    "description": "फारम भर्नुहोस्, हामी चाँडै तपाईंलाई सम्पर्क गर्नेछौं।"
+  },
+  "gallery": {
+    "noImages": "तस्बिरहरू उपलब्ध छैनन्",
+    "imageAlt": "{{title}} - तस्बिर {{index}}"
+  }
+}

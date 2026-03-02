@@ -7,12 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { createLead } from "@/services/leadService";
 import { toast } from "sonner";
 import { CheckCircle2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface LeadFormProps {
   propertyId?: string;
 }
 
 const LeadForm = ({ propertyId }: LeadFormProps) => {
+  const { t } = useTranslation("lead");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({
@@ -33,10 +35,10 @@ const LeadForm = ({ propertyId }: LeadFormProps) => {
         property_id: propertyId || null,
       });
       setSubmitted(true);
-      toast.success("Inquiry submitted! We'll be in touch soon.");
+      toast.success(t("toast.success"));
       setForm({ name: "", email: "", phone: "", message: "", budget_range: "", preferred_contact_time: "" });
     } catch {
-      toast.error("Failed to submit inquiry. Please try again.");
+      toast.error(t("toast.error"));
     } finally {
       setLoading(false);
     }
@@ -46,12 +48,12 @@ const LeadForm = ({ propertyId }: LeadFormProps) => {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center">
         <CheckCircle2 className="h-10 w-10 text-primary mb-3" />
-        <h3 className="font-heading text-lg font-semibold">Thank You!</h3>
+        <h3 className="font-heading text-lg font-semibold">{t("success.title")}</h3>
         <p className="mt-1 text-sm text-muted-foreground max-w-xs">
-          We've received your inquiry and will contact you soon.
+          {t("success.description")}
         </p>
         <Button variant="outline" size="sm" className="mt-4" onClick={() => setSubmitted(false)}>
-          Send Another Inquiry
+          {t("success.sendAnother")}
         </Button>
       </div>
     );
@@ -61,43 +63,43 @@ const LeadForm = ({ propertyId }: LeadFormProps) => {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <Label htmlFor="lead-name">Full Name *</Label>
-          <Input id="lead-name" className="mt-1.5" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Your name" />
+          <Label htmlFor="lead-name">{t("form.fullNameLabel")}</Label>
+          <Input id="lead-name" className="mt-1.5" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={t("form.fullNamePlaceholder")} />
         </div>
         <div>
-          <Label htmlFor="lead-email">Email *</Label>
-          <Input id="lead-email" className="mt-1.5" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="you@example.com" />
+          <Label htmlFor="lead-email">{t("form.emailLabel")}</Label>
+          <Input id="lead-email" className="mt-1.5" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder={t("form.emailPlaceholder")} />
         </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <Label htmlFor="lead-phone">Phone</Label>
-          <Input id="lead-phone" className="mt-1.5" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+977-..." />
+          <Label htmlFor="lead-phone">{t("form.phoneLabel")}</Label>
+          <Input id="lead-phone" className="mt-1.5" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder={t("form.phonePlaceholder")} />
         </div>
         <div>
-          <Label htmlFor="lead-budget">Budget Range</Label>
-          <Input id="lead-budget" className="mt-1.5" placeholder="e.g. 50L - 1Cr" value={form.budget_range} onChange={(e) => setForm({ ...form, budget_range: e.target.value })} />
+          <Label htmlFor="lead-budget">{t("form.budgetLabel")}</Label>
+          <Input id="lead-budget" className="mt-1.5" placeholder={t("form.budgetPlaceholder")} value={form.budget_range} onChange={(e) => setForm({ ...form, budget_range: e.target.value })} />
         </div>
       </div>
       <div>
-        <Label htmlFor="lead-contact-time">Preferred Contact Time</Label>
+        <Label htmlFor="lead-contact-time">{t("form.preferredContactTimeLabel")}</Label>
         <Select value={form.preferred_contact_time} onValueChange={(v) => setForm({ ...form, preferred_contact_time: v })}>
           <SelectTrigger id="lead-contact-time" className="mt-1.5">
-            <SelectValue placeholder="Select a time" />
+            <SelectValue placeholder={t("form.preferredContactTimePlaceholder")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="morning">Morning (9AM - 12PM)</SelectItem>
-            <SelectItem value="afternoon">Afternoon (12PM - 5PM)</SelectItem>
-            <SelectItem value="evening">Evening (5PM - 8PM)</SelectItem>
+            <SelectItem value="morning">{t("form.contactTime.morning")}</SelectItem>
+            <SelectItem value="afternoon">{t("form.contactTime.afternoon")}</SelectItem>
+            <SelectItem value="evening">{t("form.contactTime.evening")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
       <div>
-        <Label htmlFor="lead-message">Message</Label>
-        <Textarea id="lead-message" className="mt-1.5" rows={3} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder="Tell us what you're looking for..." />
+        <Label htmlFor="lead-message">{t("form.messageLabel")}</Label>
+        <Textarea id="lead-message" className="mt-1.5" rows={3} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder={t("form.messagePlaceholder")} />
       </div>
       <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? "Submitting..." : "Send Inquiry"}
+        {loading ? t("form.submitting") : t("form.submit")}
       </Button>
     </form>
   );

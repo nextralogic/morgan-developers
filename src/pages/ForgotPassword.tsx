@@ -9,8 +9,10 @@ import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Mail } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const ForgotPassword = () => {
+  const { t } = useTranslation("auth");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -23,7 +25,7 @@ const ForgotPassword = () => {
     });
     setLoading(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(t("login.toasts.genericError"));
     } else {
       setSent(true);
     }
@@ -35,8 +37,8 @@ const ForgotPassword = () => {
       <div className="flex min-h-[80vh] items-center justify-center px-4">
         <Card className="w-full max-w-md rounded-xl shadow-lg">
           <CardHeader className="space-y-1 pb-2 text-center">
-            <CardTitle className="font-heading text-2xl">Forgot Password</CardTitle>
-            <CardDescription>We'll send you a link to reset your password</CardDescription>
+            <CardTitle className="font-heading text-2xl">{t("forgot.title")}</CardTitle>
+            <CardDescription>{t("forgot.description")}</CardDescription>
           </CardHeader>
           <CardContent className="p-6 pt-4 md:p-8 md:pt-4">
             {sent ? (
@@ -45,23 +47,23 @@ const ForgotPassword = () => {
                   <Mail className="h-6 w-6 text-primary" />
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Check your email for a password reset link. It may take a minute to arrive.
+                  {t("forgot.sentMessage")}
                 </p>
                 <Button asChild variant="outline" className="w-full">
-                  <Link to="/login">Back to Sign In</Link>
+                  <Link to="/login">{t("forgot.backToSignIn")}</Link>
                 </Button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" className="mt-1.5" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+                  <Label htmlFor="email">{t("forgot.emailLabel")}</Label>
+                  <Input id="email" className="mt-1.5" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("forgot.emailPlaceholder")} />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Sending..." : "Send Reset Link"}
+                  {loading ? t("forgot.submitting") : t("forgot.submit")}
                 </Button>
                 <p className="text-center text-sm text-muted-foreground">
-                  <Link to="/login" className="font-medium text-primary hover:underline">Back to Sign In</Link>
+                  <Link to="/login" className="font-medium text-primary hover:underline">{t("forgot.backToSignIn")}</Link>
                 </p>
               </form>
             )}
