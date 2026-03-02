@@ -164,9 +164,11 @@ const AdminDashboard = () => {
             <TabsTrigger value="properties" className="gap-2">
               <LayoutDashboard className="h-4 w-4" /> {t("dashboard.tabs.properties", { ns: "admin" })}
             </TabsTrigger>
-            <TabsTrigger value="leads" className="gap-2">
-              <Users className="h-4 w-4" /> {t("dashboard.tabs.leads", { ns: "admin" })}
-            </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="leads" className="gap-2">
+                <Users className="h-4 w-4" /> {t("dashboard.tabs.leads", { ns: "admin" })}
+              </TabsTrigger>
+            )}
             <TabsTrigger value="audit" className="gap-2">
               <ScrollText className="h-4 w-4" /> {t("dashboard.tabs.audit", { ns: "admin" })}
             </TabsTrigger>
@@ -390,9 +392,11 @@ const AdminDashboard = () => {
             />
           </TabsContent>
 
-          <TabsContent value="leads">
-            <AdminLeads enabled={!checking} />
-          </TabsContent>
+          {isAdmin && (
+            <TabsContent value="leads">
+              <AdminLeads enabled={!checking} />
+            </TabsContent>
+          )}
 
           <TabsContent value="audit">
             <AdminAuditLogs enabled={!checking} />

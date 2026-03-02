@@ -126,27 +126,28 @@ export async function createLead(payload: {
   preferred_contact_time?: string;
   property_id?: string | null;
 }) {
-  const { data, error } = await supabase
+  const leadId = crypto.randomUUID();
+
+  const { error } = await supabase
     .from("leads")
     .insert({
+      id: leadId,
       ...payload,
       property_id: payload.property_id || null,
       source: "website" as const,
-    })
-    .select("id")
-    .single();
+    });
 
   if (error) throw error;
 
   // Best-effort: fire notification edge function
   try {
     await supabase.functions.invoke("lead-notification", {
-      body: { lead_id: data.id },
+      body: { lead_id: leadId },
     });
   } catch {
     // Notification failure must not break lead creation
     console.warn("Lead notification failed (non-critical)");
   }
 
-  return data;
+  return { id: leadId };
 }
