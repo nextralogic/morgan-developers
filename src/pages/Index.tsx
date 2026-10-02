@@ -54,7 +54,7 @@ const Index = () => {
             src={heroBg}
             alt={t("hero.imageAlt", { ns: "home" })}
             className="absolute inset-0 h-full w-full object-cover"
-            fetchPriority="high"
+            fetchpriority="high"
             sizes="100vw"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-foreground/70 via-foreground/50 to-foreground/80" />

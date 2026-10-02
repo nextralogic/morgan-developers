@@ -123,8 +123,13 @@ const PropertyForm = () => {
 
     setSaving(true);
 
-    let locationId: string | null = null;
-    if (address.province && address.district && address.municipality_or_city) {
+    // For non-admin draft posting, skip location upsert to avoid blocking creation
+    // when the project has strict locations INSERT RLS.
+    let locationId: string | null = isEdit ? (existingProperty?.location_id ?? null) : null;
+    const hasFullAddress = Boolean(address.province && address.district && address.municipality_or_city);
+    const shouldPersistLocation = hasFullAddress && (isAdmin || statusToSave === "published");
+
+    if (shouldPersistLocation) {
       try {
         locationId = await upsertLocation(address);
       } catch {
