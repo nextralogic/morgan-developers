@@ -2,12 +2,14 @@ import { useMemo, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { logPropertyView } from "@/services/analyticsService";
+import { getRelatedProperties } from "@/services/propertySearchService";
 import { supabase } from "@/integrations/supabase/client";
 import { parsePropertyPublicId, isUUID, buildPropertyUrl } from "@/lib/property-url";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import LeadForm from "@/components/LeadForm";
 import ImageGallery from "@/components/ImageGallery";
+import PropertyCard from "@/components/PropertyCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -101,6 +103,14 @@ const PropertyDetail = () => {
       return data;
     },
     enabled: !!property?.id,
+  });
+
+  const relatedDistrict = (property?.locations as { district?: string | null } | null)?.district ?? null;
+  const { data: related } = useQuery({
+    queryKey: ["related-properties", property?.id],
+    queryFn: () => getRelatedProperties(property!.id, relatedDistrict, property!.type),
+    enabled: !!property?.id,
+    staleTime: 10 * 60 * 1000,
   });
 
   const locationPath = useMemo(() => {
@@ -336,6 +346,36 @@ const PropertyDetail = () => {
             </Card>
           </div>
         </div>
+
+        {related && related.length > 0 && (
+          <section className="mt-16 border-t pt-10" aria-labelledby="related-heading">
+            <h2 id="related-heading" className="font-heading text-xl font-semibold sm:text-2xl">
+              {relatedDistrict && related.every((p) => p.locations?.district === relatedDistrict)
+                ? t("related.titleInArea", { ns: "propertyDetail", area: relatedDistrict })
+                : t("related.title", { ns: "propertyDetail" })}
+            </h2>
+            <div className="mt-6 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {related.map((p) => {
+                const primaryImg = p.property_images?.find((img) => img.is_primary);
+                return (
+                  <PropertyCard
+                    key={p.id}
+                    id={p.id}
+                    title={p.title}
+                    price={Number(p.price)}
+                    type={p.type}
+                    areaSqft={p.area_sqft ? Number(p.area_sqft) : undefined}
+                    areaValue={p.area_value ? Number(p.area_value) : undefined}
+                    areaUnit={p.area_unit || undefined}
+                    imageUrl={primaryImg?.image_url || p.property_images?.[0]?.image_url}
+                    locationName={p.locations?.display_name ?? undefined}
+                    propertyPublicId={p.property_public_id}
+                  />
+                );
+              })}
+            </div>
+          </section>
+        )}
       </main>
       <Footer />
     </>

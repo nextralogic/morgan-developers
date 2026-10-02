@@ -1,11 +1,13 @@
 import type { Config, Context } from "@netlify/edge-functions";
 import {
   buildHomeMeta,
+  buildLandConverterMeta,
   buildListingIndexMeta,
   buildNoIndexMeta,
   buildPropertyMeta,
   buildPropertyPath,
   injectHeadTags,
+  LAND_CONVERTER_PATH,
   isUUID,
   parsePropertyPublicId,
   type MetaTags,
@@ -112,6 +114,9 @@ async function resolveRoute(url: URL, siteUrl: string): Promise<RouteResult | nu
   if (path === "/" || path === "/index.html") return { meta: buildHomeMeta(siteUrl) };
   if (path === "/properties" || path === "/properties/") {
     return { meta: buildListingIndexMeta(siteUrl, url.searchParams) };
+  }
+  if (path === LAND_CONVERTER_PATH || path === `${LAND_CONVERTER_PATH}/`) {
+    return { meta: buildLandConverterMeta(siteUrl) };
   }
   if (PRIVATE_PATHS.some((pattern) => pattern.test(path))) {
     return { meta: buildNoIndexMeta("Account") };

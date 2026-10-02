@@ -252,6 +252,25 @@ export function buildPropertyMeta(siteUrl: string, p: SeoProperty): MetaTags {
   };
 }
 
+export const LAND_CONVERTER_PATH = "/land-unit-converter";
+
+export function buildLandConverterMeta(siteUrl: string): MetaTags {
+  const url = `${siteUrl}${LAND_CONVERTER_PATH}`;
+  return {
+    title: withBrand("Ropani to Sq Ft Converter – Nepali Land Units"),
+    description:
+      "Convert ropani, aana, paisa, daam, bigha, kattha and dhur to square feet, square metres and acres. Free Nepali land area calculator with conversion tables.",
+    canonical: url,
+    ogType: "website",
+    jsonLd: [
+      buildBreadcrumbJsonLd([
+        { name: "Home", url: `${siteUrl}/` },
+        { name: "Land Unit Converter", url },
+      ]),
+    ],
+  };
+}
+
 export function buildNoIndexMeta(title: string, description?: string): MetaTags {
   return { title: withBrand(title), description, robots: "noindex, follow" };
 }

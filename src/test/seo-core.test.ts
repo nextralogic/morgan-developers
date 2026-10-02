@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildHomeMeta,
+  buildLandConverterMeta,
   buildListingIndexMeta,
   buildPropertyMeta,
   buildPropertyPath,
@@ -11,6 +12,7 @@ import {
   type SeoProperty,
 } from "@/lib/seo/core";
 import { getThumbnailUrl } from "@/lib/image-url";
+import { AREA_UNITS, sqftToNepali, sqftToTerai } from "@/lib/area-utils";
 
 const SITE = "https://morgandevelopers.com";
 
@@ -155,5 +157,20 @@ describe("thumbnails", () => {
 
   it("leaves other hosts alone", () => {
     expect(getThumbnailUrl("https://example.com/a.jpg")).toBe("https://example.com/a.jpg");
+  });
+});
+
+describe("land unit converter", () => {
+  it("has search-friendly metadata", () => {
+    const meta = buildLandConverterMeta(SITE);
+    expect(meta.title.length).toBeLessThanOrEqual(60);
+    expect(meta.description!.length).toBeLessThanOrEqual(160);
+    expect(meta.canonical).toBe(`${SITE}/land-unit-converter`);
+  });
+
+  it("breaks areas into hill and Terai units", () => {
+    expect(sqftToNepali(5476 + 342.25 * 3)).toEqual({ ropani: 1, anna: 3, paisa: 0, dam: 0 });
+    expect(sqftToTerai(72900 + 3645 * 2 + 182.25 * 5)).toEqual({ bigha: 1, kattha: 2, dhur: 5 });
+    expect(AREA_UNITS.bigha.toSqft / AREA_UNITS.ropani.toSqft).toBeCloseTo(13.31, 2);
   });
 });

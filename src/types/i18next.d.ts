@@ -8,6 +8,7 @@ import lead from "@/locales/en/lead.json";
 import auth from "@/locales/en/auth.json";
 import owner from "@/locales/en/owner.json";
 import admin from "@/locales/en/admin.json";
+import tools from "@/locales/en/tools.json";
 
 declare module "i18next" {
   interface CustomTypeOptions {
@@ -21,6 +22,7 @@ declare module "i18next" {
       auth: typeof auth;
       owner: typeof owner;
       admin: typeof admin;
+      tools: typeof tools;
     };
   }
 }

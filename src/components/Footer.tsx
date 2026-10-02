@@ -27,6 +27,9 @@ const Footer = () => {
               <li>
                 <Link to="/properties" className="text-foreground/70 transition-colors hover:text-primary">{t("nav.properties")}</Link>
               </li>
+              <li>
+                <Link to="/land-unit-converter" className="text-foreground/70 transition-colors hover:text-primary">{t("nav.landConverter")}</Link>
+              </li>
             </ul>
           </div>
           <div>

@@ -10,6 +10,7 @@ import enLead from "@/locales/en/lead.json";
 import enAuth from "@/locales/en/auth.json";
 import enOwner from "@/locales/en/owner.json";
 import enAdmin from "@/locales/en/admin.json";
+import enTools from "@/locales/en/tools.json";
 
 import neCommon from "@/locales/ne/common.json";
 import neHome from "@/locales/ne/home.json";
@@ -19,6 +20,7 @@ import neLead from "@/locales/ne/lead.json";
 import neAuth from "@/locales/ne/auth.json";
 import neOwner from "@/locales/ne/owner.json";
 import neAdmin from "@/locales/ne/admin.json";
+import neTools from "@/locales/ne/tools.json";
 
 export const SUPPORTED_LANGUAGES = ["en", "ne"] as const;
 export type AppLanguage = (typeof SUPPORTED_LANGUAGES)[number];
@@ -33,6 +35,7 @@ const resources = {
     auth: enAuth,
     owner: enOwner,
     admin: enAdmin,
+    tools: enTools,
   },
   ne: {
     common: neCommon,
@@ -43,6 +46,7 @@ const resources = {
     auth: neAuth,
     owner: neOwner,
     admin: neAdmin,
+    tools: neTools,
   },
 } as const;
 
@@ -55,7 +59,7 @@ if (!i18n.isInitialized) {
       supportedLngs: [...SUPPORTED_LANGUAGES],
       fallbackLng: "en",
       defaultNS: "common",
-      ns: ["common", "home", "properties", "propertyDetail", "lead", "auth", "owner", "admin"],
+      ns: ["common", "home", "properties", "propertyDetail", "lead", "auth", "owner", "admin", "tools"],
       interpolation: {
         escapeValue: false,
       },

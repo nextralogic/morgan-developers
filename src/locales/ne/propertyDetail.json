@@ -34,5 +34,9 @@
   },
   "breadcrumb": {
     "ariaLabel": "ब्रेडक्रम्ब"
+  },
+  "related": {
+    "title": "यस्तै सम्पत्तिहरू",
+    "titleInArea": "{{area}} मा थप सम्पत्तिहरू"
   }
 }

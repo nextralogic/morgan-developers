@@ -1,25 +1,11 @@
-import { motion } from "framer-motion";
 import { ReactNode } from "react";
 
-const pageVariants = {
-  initial: { opacity: 0, y: 12 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -8 },
-};
-
-const pageTransition = {
-  duration: 0.3,
-  ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
-};
-
+/**
+ * Light enter animation for route changes. Transform only (no opacity), so the
+ * page is painted immediately and Largest Contentful Paint is not delayed.
+ */
 export const PageTransition = ({ children }: { children: ReactNode }) => (
-  <motion.div
-    variants={pageVariants}
-    initial="initial"
-    animate="animate"
-    exit="exit"
-    transition={pageTransition}
-  >
+  <div className="motion-safe:animate-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-300 motion-safe:ease-out">
     {children}
-  </motion.div>
+  </div>
 );

@@ -1,5 +1,5 @@
 import type { Config } from "@netlify/edge-functions";
-import { buildPropertyPath } from "../../src/lib/seo/core.ts";
+import { buildPropertyPath, LAND_CONVERTER_PATH } from "../../src/lib/seo/core.ts";
 import { getSiteUrl, parseTotalCount, supabaseRest } from "../lib/supabase-rest.ts";
 
 /**
@@ -75,7 +75,11 @@ async function sitemapIndex(siteUrl: string): Promise<Response> {
 async function pagesSitemap(siteUrl: string): Promise<Response> {
   const lastmod = await latestUpdate();
   if (lastmod === undefined) return unavailable();
-  const entries = [urlEntry(`${siteUrl}/`, lastmod), urlEntry(`${siteUrl}/properties`, lastmod)];
+  const entries = [
+    urlEntry(`${siteUrl}/`, lastmod),
+    urlEntry(`${siteUrl}/properties`, lastmod),
+    urlEntry(`${siteUrl}${LAND_CONVERTER_PATH}`, null),
+  ];
   return xmlResponse(`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.join("\n")}\n</urlset>`);
 }
 

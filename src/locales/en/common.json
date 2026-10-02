@@ -12,7 +12,8 @@
     "signUp": "Sign Up",
     "signOut": "Sign Out",
     "navigation": "Navigation",
-    "openMenu": "Open menu"
+    "openMenu": "Open menu",
+    "landConverter": "Land unit converter"
   },
   "languageSwitcher": {
     "ariaLabel": "Select language",

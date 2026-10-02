@@ -1,0 +1,30 @@
+{
+  "landConverter": {
+    "breadcrumb": "Land Unit Converter",
+    "eyebrow": "Free tool",
+    "title": "Nepali Land Unit Converter",
+    "intro": "Convert ropani, aana, paisa, daam, bigha, kattha and dhur to square feet, square metres and acres. Enter a value in any unit to see it in every other unit.",
+    "valueLabel": "Area",
+    "unitLabel": "Unit",
+    "resultsTitle": "Converted area",
+    "hillBreakdown": "Ropani – Aana – Paisa – Daam",
+    "teraiBreakdown": "Bigha – Kattha – Dhur",
+    "invalid": "Enter a number greater than zero.",
+    "hillTableTitle": "Hill system (Kathmandu Valley and hill districts)",
+    "hillTableIntro": "Ropani, aana, paisa and daam are used for land in the Kathmandu Valley and most hill districts. 1 ropani = 16 aana, 1 aana = 4 paisa and 1 paisa = 4 daam.",
+    "teraiTableTitle": "Terai system (southern plains)",
+    "teraiTableIntro": "Bigha, kattha and dhur are used in the Terai, for example in Chitwan, Rupandehi, Morang and Kailali. 1 bigha = 20 kattha and 1 kattha = 20 dhur.",
+    "compareTitle": "Ropani and bigha compared",
+    "compareText": "One bigha is about {{ropaniPerBigha}} ropani, and one ropani is about {{katthaPerRopani}} kattha. One ropani is roughly {{acrePerRopani}} acres.",
+    "table": {
+      "unit": "Unit",
+      "sqft": "Square feet",
+      "sqm": "Square metres"
+    },
+    "cta": {
+      "title": "Looking for land?",
+      "text": "Browse land, houses and apartments for sale across Nepal, with the area shown in local units.",
+      "button": "Browse land for sale"
+    }
+  }
+}

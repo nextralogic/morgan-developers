@@ -58,6 +58,18 @@ export function sqftToNepali(sqft: number) {
   return { ropani, anna, paisa, dam };
 }
 
+/**
+ * Convert sq.ft to Terai land units (bigha-kattha-dhur).
+ */
+export function sqftToTerai(sqft: number) {
+  const bigha = Math.floor(sqft / 72900);
+  let remainder = sqft % 72900;
+  const kattha = Math.floor(remainder / 3645);
+  remainder = remainder % 3645;
+  const dhur = Math.round((remainder / 182.25) * 100) / 100;
+  return { bigha, kattha, dhur };
+}
+
 export function formatNepaliArea(sqft: number): string {
   const { ropani, anna, paisa, dam } = sqftToNepali(sqft);
   const parts: string[] = [];

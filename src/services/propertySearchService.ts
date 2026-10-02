@@ -250,3 +250,52 @@ export function filtersToParams(filters: PropertySearchFilters): URLSearchParams
   if (filters.page && filters.page > 1) p.set("page", String(filters.page));
   return p;
 }
+
+// ─── Related listings ───────────────────────────────────────────────────────
+
+const RELATED_SELECT =
+  "*, locations!inner(id, display_name, province, district, municipality_or_city), property_images(image_url, is_primary)";
+
+/**
+ * Published listings in the same district, topped up with the same property
+ * type, for internal links on a property page.
+ */
+export async function getRelatedProperties(
+  propertyId: string,
+  district: string | null | undefined,
+  type: PropertyWithLocation["type"],
+  limit = 3
+): Promise<PropertyWithLocation[]> {
+  const results: PropertyWithLocation[] = [];
+
+  if (district) {
+    const { data, error } = await supabase
+      .from("properties")
+      .select(RELATED_SELECT)
+      .eq("status", "published")
+      .eq("is_deleted", false)
+      .neq("id", propertyId)
+      .eq("locations.district", district)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    results.push(...((data as unknown as PropertyWithLocation[]) ?? []));
+  }
+
+  if (results.length < limit) {
+    const excluded = [propertyId, ...results.map((p) => p.id)];
+    const { data, error } = await supabase
+      .from("properties")
+      .select(RELATED_SELECT)
+      .eq("status", "published")
+      .eq("is_deleted", false)
+      .eq("type", type)
+      .not("id", "in", `(${excluded.join(",")})`)
+      .order("created_at", { ascending: false })
+      .limit(limit - results.length);
+    if (error) throw error;
+    results.push(...((data as unknown as PropertyWithLocation[]) ?? []));
+  }
+
+  return results;
+}
