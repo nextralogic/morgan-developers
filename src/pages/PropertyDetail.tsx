@@ -26,10 +26,35 @@ import { Button } from "@/components/ui/button";
 import ShareButtons from "@/components/ShareButtons";
 import ListingLandSize from "@/components/ListingLandSize";
 import { formatAreaWithUnit, listingAreaSqft, priceQuoteUnit, pricePerUnit } from "@/lib/area-utils";
+import { propertyDataKey, takeInitialData } from "@/lib/initial-data";
 import { usePageMeta } from "@/lib/seo/usePageMeta";
 import { SITE_URL } from "@/lib/seo/constants";
 import { buildNoIndexMeta, buildPropertyMeta } from "@/lib/seo/core";
 import { useTranslation } from "react-i18next";
+
+const PROPERTY_DETAIL_SELECT =
+  "*, locations(id, display_name, province, district, municipality_or_city, ward, area_name), property_images(*)";
+
+async function fetchPublishedProperty(slug: string) {
+  const propertyPublicId = parsePropertyPublicId(slug);
+  const query = supabase.from("properties").select(PROPERTY_DETAIL_SELECT);
+  const filtered = propertyPublicId
+    ? query.eq("property_public_id", propertyPublicId)
+    : isUUID(slug)
+      ? query.eq("id", slug)
+      : null;
+  if (!filtered) throw new Error("Invalid property URL");
+
+  const { data, error } = await filtered.single();
+  if (error) throw error;
+  // Block soft-deleted or non-published properties for public users
+  if (data && (data.is_deleted === true || data.status !== "published")) {
+    return null;
+  }
+  return data;
+}
+
+type PropertyDetailRow = NonNullable<Awaited<ReturnType<typeof fetchPublishedProperty>>>;
 
 const PropertyDetail = () => {
   const { t, i18n } = useTranslation(["propertyDetail", "common", "tools"]);
@@ -42,36 +67,10 @@ const PropertyDetail = () => {
 
   const { data: property, isLoading } = useQuery({
     queryKey: ["property", slug],
-    queryFn: async () => {
-      let query = supabase
-        .from("properties")
-        .select("*, locations(id, display_name, province, district, municipality_or_city, ward, area_name), property_images(*)")
-        .single();
-
-      if (propertyPublicId) {
-        query = supabase
-          .from("properties")
-          .select("*, locations(id, display_name, province, district, municipality_or_city, ward, area_name), property_images(*)")
-          .eq("property_public_id", propertyPublicId)
-          .single();
-      } else if (isOldUUID) {
-        query = supabase
-          .from("properties")
-          .select("*, locations(id, display_name, province, district, municipality_or_city, ward, area_name), property_images(*)")
-          .eq("id", slug!)
-          .single();
-      } else {
-        throw new Error("Invalid property URL");
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      // Block soft-deleted or non-published properties for public users
-      if (data && ((data as any).is_deleted === true || (data as any).status !== "published")) {
-        return null;
-      }
-      return data;
-    },
+    queryFn: () => fetchPublishedProperty(slug!),
+    // The edge function embeds the row on the first page load, so the photo and
+    // details render without waiting for this fetch. It still runs to refresh it.
+    initialData: () => (slug ? takeInitialData<PropertyDetailRow>(propertyDataKey(slug)) : undefined),
     enabled: !!slug,
     retry: false,
   });

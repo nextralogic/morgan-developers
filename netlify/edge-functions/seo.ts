@@ -16,7 +16,9 @@ import {
 } from "../../src/lib/seo/core.ts";
 import { getThumbnailUrl } from "../../src/lib/image-url.ts";
 import { buildLandConversionMeta, findConversionPair } from "../../src/lib/land-conversions.ts";
+import { propertyDataKey } from "../../src/lib/initial-data.ts";
 import {
+  injectInitialData,
   injectPageContent,
   LISTING_PAGE_SIZE,
   LISTING_SUMMARY_SELECT,
@@ -46,20 +48,28 @@ const PRIVATE_PATHS = [
   /^\/properties\/[^/]+\/edit\/?$/,
 ];
 
+/**
+ * The columns the listing page reads. The row is also embedded in the HTML so
+ * the page can render without fetching it again; created_by and view_count are
+ * left out on purpose.
+ */
 const PROPERTY_SELECT = [
+  "id",
   "title",
   "description",
   "price",
   "type",
   "status",
+  "is_deleted",
   "area_sqft",
   "area_value",
   "area_unit",
   "property_public_id",
+  "location_id",
   "created_at",
   "updated_at",
-  "locations(display_name,province,district,municipality_or_city,ward,area_name)",
-  "property_images(image_url,is_primary,display_order)",
+  "locations(id,display_name,province,district,municipality_or_city,ward,area_name)",
+  "property_images(*)",
 ].join(",");
 
 const CACHE_HEADERS: Record<string, string> = {
@@ -69,11 +79,13 @@ const CACHE_HEADERS: Record<string, string> = {
 };
 
 interface PropertyRow {
+  id: string;
   title: string;
   description: string | null;
   price: number;
   type: string;
   status: string;
+  is_deleted: boolean;
   area_sqft: number | null;
   area_value: number | null;
   area_unit: string | null;
@@ -84,7 +96,9 @@ interface PropertyRow {
   property_images: { image_url: string; is_primary: boolean; display_order: number }[] | null;
 }
 
-type RouteResult = { meta: MetaTags; status?: number; content?: string } | { redirect: string };
+type RouteResult =
+  | { meta: MetaTags; status?: number; content?: string; initialData?: Record<string, unknown> }
+  | { redirect: string };
 
 function notFound(gone = false): RouteResult {
   return {
@@ -153,7 +167,11 @@ async function resolveProperty(url: URL, slug: string, siteUrl: string): Promise
     imageUrls: images.map((img) => img.image_url),
     location: row.locations,
   };
-  return { meta: buildPropertyMeta(siteUrl, property), content: renderPropertyContent(property) };
+  const initialData =
+    row.status === "published" && !row.is_deleted
+      ? { [propertyDataKey(canonicalPath.replace("/properties/", ""))]: row }
+      : undefined;
+  return { meta: buildPropertyMeta(siteUrl, property), content: renderPropertyContent(property), initialData };
 }
 
 async function resolveRoute(url: URL, siteUrl: string): Promise<RouteResult | null> {
@@ -215,7 +233,10 @@ export default async (request: Request, context: Context) => {
   const body =
     request.method === "HEAD"
       ? null
-      : injectPageContent(injectHeadTags(await response.text(), result.meta, siteUrl), result.content ?? "");
+      : injectInitialData(
+          injectPageContent(injectHeadTags(await response.text(), result.meta, siteUrl), result.content ?? ""),
+          result.initialData
+        );
   return new Response(body, { status: result.status ?? 200, headers });
 };
 

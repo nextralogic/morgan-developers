@@ -1,4 +1,5 @@
 import { AREA_UNITS, listingAreaSqft, sqftToNepali, sqftToTerai, type AreaUnit } from "../../src/lib/area-utils.ts";
+import { INITIAL_DATA_ID } from "../../src/lib/initial-data.ts";
 import {
   CONVERSION_PAIRS,
   conversionFactor,
@@ -256,6 +257,13 @@ export function renderNotFoundContent(gone: boolean): string {
     `<p>${message} <a href="/properties">Browse property for sale</a>.</p>`,
     "</main>",
   ].join("");
+}
+
+/** Embed rows the page would otherwise fetch on load. `<` is escaped so the JSON cannot close the script tag. */
+export function injectInitialData(html: string, data?: Record<string, unknown>): string {
+  if (!data || !html.includes("</body>")) return html;
+  const json = JSON.stringify(data).replace(/</g, "\\u003c");
+  return html.replace("</body>", () => `<script id="${INITIAL_DATA_ID}" type="application/json">${json}</script></body>`);
 }
 
 /** Put the content inside the empty React root of the built index.html. */

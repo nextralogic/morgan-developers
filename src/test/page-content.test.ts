@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildPropertyMeta, injectHeadTags, type SeoProperty } from "@/lib/seo/core";
 import {
+  injectInitialData,
   injectPageContent,
   LISTING_PAGE_SIZE,
   listingCardImage,
@@ -63,6 +64,14 @@ describe("page content for crawlers", () => {
     expect(renderPropertyContent(house)).not.toContain("Price:");
     expect(renderPropertyContent({ ...house, areaUnit: "sq_meter" })).toContain('<a href="/land-unit-converter">Land unit converter</a>');
     expect(renderPropertyContent({ ...house, areaValue: null })).not.toContain("Land size");
+  });
+
+  it("embeds initial data that cannot close its script tag", () => {
+    const html = injectInitialData(SHELL, { "property:x-1": { title: "</script><b>x</b>" } });
+    expect(html).toContain(
+      '<script id="initial-data" type="application/json">{"property:x-1":{"title":"\\u003c/script>\\u003cb>x\\u003c/b>"}}</script></body>'
+    );
+    expect(injectInitialData(SHELL)).toBe(SHELL);
   });
 
   it("links listings and pagination", () => {
