@@ -19,6 +19,8 @@ import { upsertLocation, getLocationById } from "@/services/locationService";
 import type { NepalAddress } from "@/utils/nepalAddress";
 import { AREA_UNITS, convertToSqft, type AreaUnit } from "@/lib/area-utils";
 import { useTranslation } from "react-i18next";
+import { usePageMeta } from "@/lib/seo/usePageMeta";
+import { buildNoIndexMeta } from "@/lib/seo/core";
 
 const EMPTY_ADDRESS: NepalAddress = { province: "", district: "", municipality_or_city: "", ward: null, area_name: "" };
 
@@ -26,6 +28,9 @@ const PropertyForm = () => {
   const { t, i18n } = useTranslation(["owner", "common"]);
   const { id } = useParams<{ id: string }>();
   const isEdit = !!id;
+
+  usePageMeta(buildNoIndexMeta(isEdit ? t("propertyForm.header.editTitle", { ns: "owner" }) : t("propertyForm.header.newTitle", { ns: "owner" })));
+
   const navigate = useNavigate();
   const { user, loading: authLoading, isAdmin } = useAuth();
   const numberLocale = i18n.resolvedLanguage?.startsWith("ne") ? "ne-NP" : "en-US";

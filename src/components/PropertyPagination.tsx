@@ -7,12 +7,14 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import type { MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 
 interface PropertyPaginationProps {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  getPageHref: (page: number) => string;
 }
 
 /** Build the list of page numbers to display (with ellipsis gaps). */
@@ -34,18 +36,28 @@ function getPageNumbers(current: number, total: number): (number | "ellipsis")[]
   return pages;
 }
 
-const PropertyPagination = ({ page, totalPages, onPageChange }: PropertyPaginationProps) => {
+const PropertyPagination = ({ page, totalPages, onPageChange, getPageHref }: PropertyPaginationProps) => {
   const { t } = useTranslation("common");
   if (totalPages <= 1) return null;
 
   const pages = getPageNumbers(page, totalPages);
+
+  // Real hrefs keep every page crawlable; clicks stay client-side.
+  const linkProps = (target: number) => ({
+    href: getPageHref(target),
+    onClick: (e: MouseEvent<HTMLAnchorElement>) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+      e.preventDefault();
+      onPageChange(target);
+    },
+  });
 
   return (
     <Pagination className="mt-10" aria-label={t("pagination.ariaLabel")}>
       <PaginationContent>
         <PaginationItem>
           <PaginationPrevious
-            onClick={() => page > 1 && onPageChange(page - 1)}
+            {...(page > 1 ? linkProps(page - 1) : { "aria-disabled": true })}
             className={page <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
             label={t("pagination.previous")}
             ariaLabel={t("pagination.previousAria")}
@@ -61,7 +73,7 @@ const PropertyPagination = ({ page, totalPages, onPageChange }: PropertyPaginati
             <PaginationItem key={p}>
               <PaginationLink
                 isActive={p === page}
-                onClick={() => onPageChange(p)}
+                {...linkProps(p)}
                 className="cursor-pointer"
               >
                 {p}
@@ -72,7 +84,7 @@ const PropertyPagination = ({ page, totalPages, onPageChange }: PropertyPaginati
 
         <PaginationItem>
           <PaginationNext
-            onClick={() => page < totalPages && onPageChange(page + 1)}
+            {...(page < totalPages ? linkProps(page + 1) : { "aria-disabled": true })}
             className={page >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
             label={t("pagination.next")}
             ariaLabel={t("pagination.nextAria")}

@@ -58,7 +58,7 @@ const HeroSearchForm = () => {
       {/* Row 1: Filters grid */}
       <div className="grid gap-3 grid-cols-2 sm:gap-4 lg:grid-cols-4">
         <div>
-          <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-[11px]">
+          <label htmlFor="hero-province" className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-[11px]">
             {t("search.province", { ns: "home" })}
           </label>
           <Select
@@ -67,7 +67,7 @@ const HeroSearchForm = () => {
               setAddress({ province: v === "__none" ? "" : v, district: "", municipality_or_city: "", ward: null, area_name: "" })
             }
           >
-            <SelectTrigger className="text-xs sm:text-sm"><SelectValue placeholder={t("search.allProvinces", { ns: "home" })} /></SelectTrigger>
+            <SelectTrigger id="hero-province" className="text-xs sm:text-sm"><SelectValue placeholder={t("search.allProvinces", { ns: "home" })} /></SelectTrigger>
             <SelectContent>
               <SelectItem value="__none">{t("search.allProvinces", { ns: "home" })}</SelectItem>
               {provinces.map((p) => (
@@ -78,7 +78,7 @@ const HeroSearchForm = () => {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-[11px]">
+          <label htmlFor="hero-district" className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-[11px]">
             {t("search.district", { ns: "home" })}
           </label>
           <Select
@@ -88,7 +88,7 @@ const HeroSearchForm = () => {
             }
             disabled={!address.province}
           >
-            <SelectTrigger className="text-xs sm:text-sm"><SelectValue placeholder={address.province ? t("search.allDistricts", { ns: "home" }) : t("search.provinceFirst", { ns: "home" })} /></SelectTrigger>
+            <SelectTrigger id="hero-district" className="text-xs sm:text-sm"><SelectValue placeholder={address.province ? t("search.allDistricts", { ns: "home" }) : t("search.provinceFirst", { ns: "home" })} /></SelectTrigger>
             <SelectContent>
               <SelectItem value="__none">{t("search.allDistricts", { ns: "home" })}</SelectItem>
               {districts.map((d) => (
@@ -99,7 +99,7 @@ const HeroSearchForm = () => {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-[11px]">
+          <label htmlFor="hero-municipality" className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-[11px]">
             {t("search.municipality", { ns: "home" })}
           </label>
           <Select
@@ -109,7 +109,7 @@ const HeroSearchForm = () => {
             }
             disabled={!address.district}
           >
-            <SelectTrigger className="text-xs sm:text-sm"><SelectValue placeholder={address.district ? t("search.allMunicipalities", { ns: "home" }) : t("search.districtFirst", { ns: "home" })} /></SelectTrigger>
+            <SelectTrigger id="hero-municipality" className="text-xs sm:text-sm"><SelectValue placeholder={address.district ? t("search.allMunicipalities", { ns: "home" }) : t("search.districtFirst", { ns: "home" })} /></SelectTrigger>
             <SelectContent>
               <SelectItem value="__none">{t("search.allMunicipalities", { ns: "home" })}</SelectItem>
               {municipalities.map((m) => (
@@ -120,11 +120,11 @@ const HeroSearchForm = () => {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-[11px]">
+          <label htmlFor="hero-type" className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground sm:text-[11px]">
             {t("search.propertyType", { ns: "home" })}
           </label>
           <Select value={type} onValueChange={setType}>
-            <SelectTrigger className="text-xs sm:text-sm"><SelectValue placeholder={t("search.allTypes", { ns: "home" })} /></SelectTrigger>
+            <SelectTrigger id="hero-type" className="text-xs sm:text-sm"><SelectValue placeholder={t("search.allTypes", { ns: "home" })} /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t("search.allTypes", { ns: "home" })}</SelectItem>
               <SelectItem value="apartment">{t("property.types.apartment", { ns: "common" })}</SelectItem>

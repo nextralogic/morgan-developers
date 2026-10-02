@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { getThumbnailUrl } from "@/lib/image-url";
 import { useTranslation } from "react-i18next";
 
 interface ImageGalleryProps {
@@ -38,6 +39,9 @@ const ImageGallery = ({ images, title }: ImageGalleryProps) => {
           src={sorted[current].image_url}
           alt={t("gallery.imageAlt", { title, index: current + 1 })}
           className="h-full w-full object-cover"
+          width={1280}
+          height={720}
+          fetchpriority={current === 0 ? "high" : "auto"}
         />
         {sorted.length > 1 && (
           <>
@@ -45,6 +49,7 @@ const ImageGallery = ({ images, title }: ImageGalleryProps) => {
               variant="ghost"
               size="icon"
               onClick={prev}
+              aria-label={t("gallery.previous")}
               className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-card/70 backdrop-blur-sm hover:bg-card/90"
             >
               <ChevronLeft className="h-5 w-5" />
@@ -53,6 +58,7 @@ const ImageGallery = ({ images, title }: ImageGalleryProps) => {
               variant="ghost"
               size="icon"
               onClick={next}
+              aria-label={t("gallery.next")}
               className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-card/70 backdrop-blur-sm hover:bg-card/90"
             >
               <ChevronRight className="h-5 w-5" />
@@ -70,13 +76,30 @@ const ImageGallery = ({ images, title }: ImageGalleryProps) => {
           {sorted.map((img, i) => (
             <button
               key={i}
+              type="button"
               onClick={() => setCurrent(i)}
+              aria-label={t("gallery.showPhoto", { index: i + 1 })}
+              aria-pressed={i === current}
               className={cn(
                 "h-16 w-20 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all",
                 i === current ? "border-primary ring-1 ring-primary/30" : "border-transparent opacity-60 hover:opacity-100"
               )}
             >
-              <img src={img.image_url} alt="" className="h-full w-full object-cover" />
+              <img
+                src={getThumbnailUrl(img.image_url)}
+                data-fallback-src={img.image_url}
+                alt=""
+                width={80}
+                height={64}
+                loading="lazy"
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                  const fallback = e.currentTarget.dataset.fallbackSrc;
+                  if (!fallback) return;
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = fallback;
+                }}
+              />
             </button>
           ))}
         </div>

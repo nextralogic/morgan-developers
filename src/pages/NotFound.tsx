@@ -5,9 +5,14 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { usePageMeta } from "@/lib/seo/usePageMeta";
+import { buildNoIndexMeta } from "@/lib/seo/core";
 
 const NotFound = () => {
   const { t } = useTranslation("common");
+
+  usePageMeta(buildNoIndexMeta(t("notFound.title")));
+
   const location = useLocation();
 
   useEffect(() => {

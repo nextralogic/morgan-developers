@@ -9,9 +9,14 @@ import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useTranslation } from "react-i18next";
+import { usePageMeta } from "@/lib/seo/usePageMeta";
+import { buildNoIndexMeta } from "@/lib/seo/core";
 
 const ResetPassword = () => {
   const { t } = useTranslation("auth");
+
+  usePageMeta(buildNoIndexMeta(t("reset.title")));
+
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");

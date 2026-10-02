@@ -10,9 +10,14 @@ import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useTranslation } from "react-i18next";
+import { usePageMeta } from "@/lib/seo/usePageMeta";
+import { buildNoIndexMeta } from "@/lib/seo/core";
 
 const Signup = () => {
   const { t } = useTranslation("auth");
+
+  usePageMeta(buildNoIndexMeta(t("signup.title")));
+
   const navigate = useNavigate();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");

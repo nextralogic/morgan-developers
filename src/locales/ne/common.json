@@ -11,7 +11,8 @@
     "signIn": "साइन इन",
     "signUp": "साइन अप",
     "signOut": "साइन आउट",
-    "navigation": "नेभिगेसन"
+    "navigation": "नेभिगेसन",
+    "openMenu": "मेनु खोल्नुहोस्"
   },
   "languageSwitcher": {
     "ariaLabel": "भाषा चयन गर्नुहोस्",

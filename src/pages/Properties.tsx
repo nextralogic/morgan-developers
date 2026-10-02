@@ -17,6 +17,7 @@ import type { NepalAddress } from "@/utils/nepalAddress";
 import { useState } from "react";
 import { usePageMeta } from "@/lib/seo/usePageMeta";
 import { SITE_URL } from "@/lib/seo/constants";
+import { buildListingIndexMeta } from "@/lib/seo/core";
 import { useTranslation } from "react-i18next";
 
 const EMPTY_ADDRESS: NepalAddress = { province: "", district: "", municipality_or_city: "", ward: null, area_name: "" };
@@ -26,12 +27,7 @@ const Properties = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [filterOpen, setFilterOpen] = useState(false);
 
-  usePageMeta({
-    title: t("meta.title", { ns: "properties" }),
-    description: t("meta.description", { ns: "properties" }),
-    canonicalUrl: `${SITE_URL}/properties`,
-    ogType: "website",
-  });
+  usePageMeta(buildListingIndexMeta(SITE_URL, searchParams));
 
   // Derive filters from URL
   const filters = useMemo(() => filtersFromParams(searchParams), [searchParams]);
@@ -118,7 +114,12 @@ const Properties = () => {
           {/* Mobile filter toggle */}
           <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="relative h-11 w-11 shrink-0 rounded-xl lg:hidden">
+              <Button
+                variant="outline"
+                size="icon"
+                className="relative h-11 w-11 shrink-0 rounded-xl lg:hidden"
+                aria-label={t("filters.title", { ns: "properties" })}
+              >
                 <SlidersHorizontal className="h-4 w-4" />
                 {activeFilterCount > 0 && (
                   <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
@@ -137,6 +138,7 @@ const Properties = () => {
         {/* Active filter badges */}
         <ActiveFilters filters={filters} onUpdate={updateFilters} onReset={resetFilters} />
 
+        <h2 className="sr-only">{t("results.heading", { ns: "properties" })}</h2>
         <div className="mt-8 grid gap-8 lg:grid-cols-[280px_1fr]">
           {/* Desktop sidebar */}
           <div className="hidden lg:block">
@@ -184,7 +186,7 @@ const Properties = () => {
                   )}
                 </p>
                 <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
-                  {paginated.map((p) => {
+                  {paginated.map((p, index) => {
                     const primaryImg = p.property_images?.find((img) => img.is_primary);
                     const firstImg = p.property_images?.[0];
                     return (
@@ -200,6 +202,7 @@ const Properties = () => {
                         imageUrl={primaryImg?.image_url || firstImg?.image_url}
                         locationName={p.locations?.display_name ?? undefined}
                         propertyPublicId={p.property_public_id}
+                        priority={index < 3}
                       />
                     );
                   })}
@@ -209,6 +212,10 @@ const Properties = () => {
                   page={page}
                   totalPages={totalPages}
                   onPageChange={(p) => updateFilters({ page: p })}
+                  getPageHref={(p) => {
+                    const params = filtersToParams({ ...filters, page: p }).toString();
+                    return params ? `/properties?${params}` : "/properties";
+                  }}
                 />
               </>
             )}

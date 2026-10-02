@@ -1,9 +1,4 @@
 {
-  "meta": {
-    "propertyFallbackTitle": "सम्पत्ति",
-    "propertyFallbackDescription": "मोर्गन डेभलपर्समा सम्पत्ति सूची",
-    "priceSnippet": "नेपालमा बिक्रीका लागि {{type}} - रु {{price}}"
-  },
   "errors": {
     "propertyNotFound": "सम्पत्ति फेला परेन",
     "propertyUnavailable": "यो सम्पत्ति हटाइएको हुन सक्छ वा अब उपलब्ध छैन।"
@@ -32,6 +27,12 @@
   },
   "gallery": {
     "noImages": "तस्बिरहरू उपलब्ध छैनन्",
-    "imageAlt": "{{title}} - तस्बिर {{index}}"
+    "imageAlt": "{{title}} - तस्बिर {{index}}",
+    "previous": "अघिल्लो तस्बिर",
+    "next": "अर्को तस्बिर",
+    "showPhoto": "तस्बिर {{index}} हेर्नुहोस्"
+  },
+  "breadcrumb": {
+    "ariaLabel": "ब्रेडक्रम्ब"
   }
 }

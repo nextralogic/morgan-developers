@@ -12,13 +12,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin, Ruler, ArrowLeft, Home, Layers } from "lucide-react";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import ShareButtons from "@/components/ShareButtons";
 import { formatAreaWithUnit } from "@/lib/area-utils";
 import { usePageMeta } from "@/lib/seo/usePageMeta";
 import { SITE_URL } from "@/lib/seo/constants";
-import { buildPropertyJsonLd } from "@/lib/seo/propertyJsonld";
-import JsonLd from "@/lib/seo/StructuredDataScript";
+import { buildNoIndexMeta, buildPropertyMeta } from "@/lib/seo/core";
 import { useTranslation } from "react-i18next";
 
 const PropertyDetail = () => {
@@ -111,40 +118,31 @@ const PropertyDetail = () => {
   // --- SEO: must be called unconditionally (before early returns) ---
   const images = property ? ((property.property_images as any[]) || []) : [];
   const location = property ? (property.locations as any) : null;
-  const primaryImg = images.find((img: any) => img.is_primary) ?? images[0];
+  const orderedImageUrls = [...(images as { image_url: string; is_primary: boolean; display_order: number | null }[])]
+    .sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || (a.display_order ?? 0) - (b.display_order ?? 0))
+    .map((img) => img.image_url);
 
-  const canonicalUrl = property
-    ? `${SITE_URL}${buildPropertyUrl(property.title, (property as any).property_public_id)}`
-    : undefined;
-  const descSnippet = property?.description
-    ? property.description.slice(0, 155).replace(/\s+\S*$/, "…")
-    : property
-      ? t("meta.priceSnippet", { ns: "propertyDetail", type: property.type, price: Number(property.price).toLocaleString(numberLocale) })
-      : t("meta.propertyFallbackDescription", { ns: "propertyDetail" });
-
-  usePageMeta({
-    title: property?.title ?? t("meta.propertyFallbackTitle", { ns: "propertyDetail" }),
-    description: descSnippet,
-    canonicalUrl,
-    ogType: "product",
-    ogImage: primaryImg?.image_url,
-    ogUrl: canonicalUrl,
-  });
-
-  const jsonLd = property
-    ? buildPropertyJsonLd({
+  const pageMeta = property
+    ? buildPropertyMeta(SITE_URL, {
         title: property.title,
         description: property.description,
         price: Number(property.price),
         type: property.type,
+        status: property.status,
         areaSqft: property.area_sqft ? Number(property.area_sqft) : null,
         areaValue: (property as any).area_value ? Number((property as any).area_value) : null,
         areaUnit: (property as any).area_unit,
         propertyPublicId: (property as any).property_public_id,
-        primaryImageUrl: primaryImg?.image_url,
+        createdAt: property.created_at,
+        updatedAt: property.updated_at,
+        imageUrls: orderedImageUrls,
         location,
       })
-    : null;
+    : isLoading
+      ? null
+      : buildNoIndexMeta(t("errors.propertyNotFound", { ns: "propertyDetail" }));
+
+  usePageMeta(pageMeta);
 
   // --- Track property view (best-effort, once per mount for published properties) ---
   const viewLogged = useRef(false);
@@ -159,7 +157,7 @@ const PropertyDetail = () => {
     return (
       <>
         <Navbar />
-        <main className="container page-padding">
+        <main className="container page-padding min-h-screen">
           <Skeleton className="aspect-video w-full rounded-xl" />
           <Skeleton className="mt-6 h-8 w-2/3" />
           <Skeleton className="mt-3 h-4 w-1/3" />
@@ -200,12 +198,27 @@ const PropertyDetail = () => {
 
   return (
     <>
-      {jsonLd && <JsonLd data={jsonLd} />}
       <Navbar />
       <main className="container page-padding">
-        <Button asChild variant="ghost" size="sm" className="mb-6 -ml-2 gap-1 text-muted-foreground hover:text-foreground">
-          <Link to="/properties"><ArrowLeft className="h-4 w-4" /> {t("actions.allProperties", { ns: "propertyDetail" })}</Link>
-        </Button>
+        <Breadcrumb className="mb-6" aria-label={t("breadcrumb.ariaLabel", { ns: "propertyDetail" })}>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/">{t("nav.home", { ns: "common" })}</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/properties">{t("nav.properties", { ns: "common" })}</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem className="min-w-0">
+              <BreadcrumbPage className="truncate">{property.title}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
 
         <div className="grid gap-10 lg:grid-cols-[1fr_380px] lg:gap-12">
           <div className="min-w-0 space-y-8 sm:space-y-10">

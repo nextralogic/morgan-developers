@@ -4,9 +4,11 @@ import { Badge } from "@/components/ui/badge";
 import { Upload, X, Loader2, CheckCircle2, AlertTriangle, ImageDown, Eye, Star } from "lucide-react";
 import {
   compressImageToTargetSize,
+  createThumbnail,
   formatFileSize,
   isWithinSizeLimit,
 } from "@/lib/image-compress";
+import { getThumbnailPath, THUMBNAIL_WIDTH } from "@/lib/image-url";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -104,6 +106,14 @@ const ImageUploadQueue = ({ userId, images, onImagesChange }: ImageUploadQueuePr
         updateQueueItem(item.id, { status: "failed", error: uploadError });
         toast.error(uploadError);
         return;
+      }
+
+      // Best effort: cards fall back to the full image if the thumbnail is missing.
+      const thumbnail = await createThumbnail(file, THUMBNAIL_WIDTH);
+      if (thumbnail) {
+        await supabase.storage
+          .from("property-images")
+          .upload(getThumbnailPath(path), thumbnail, { contentType: thumbnail.type });
       }
 
       const { data: urlData } = supabase.storage.from("property-images").getPublicUrl(path);

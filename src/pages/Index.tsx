@@ -8,21 +8,16 @@ import Footer from "@/components/Footer";
 import HeroSearchForm from "@/components/HeroSearchForm";
 import PropertyCard from "@/components/PropertyCard";
 import { ArrowRight, TrendingUp } from "lucide-react";
-import heroBg from "@/assets/hero-bg.webp";
 import { getMostViewedProperties } from "@/services/analyticsService";
 import { usePageMeta } from "@/lib/seo/usePageMeta";
 import { SITE_URL } from "@/lib/seo/constants";
+import { buildHomeMeta, HERO_IMAGE } from "@/lib/seo/core";
 import { useTranslation } from "react-i18next";
 
 const Index = () => {
   const { t } = useTranslation(["home", "common"]);
 
-  usePageMeta({
-    title: t("meta.title", { ns: "home" }),
-    description: t("meta.description", { ns: "home" }),
-    canonicalUrl: `${SITE_URL}/`,
-    ogType: "website",
-  });
+  usePageMeta(buildHomeMeta(SITE_URL));
 
   const { data: featured, isLoading } = useQuery({
     queryKey: ["featured-properties"],
@@ -51,11 +46,14 @@ const Index = () => {
         {/* Hero */}
         <section className="relative flex min-h-[75vh] items-center sm:min-h-[85vh]">
           <img
-            src={heroBg}
+            src={HERO_IMAGE.src}
+            srcSet={HERO_IMAGE.srcSet}
+            sizes={HERO_IMAGE.sizes}
+            width={HERO_IMAGE.width}
+            height={HERO_IMAGE.height}
             alt={t("hero.imageAlt", { ns: "home" })}
             className="absolute inset-0 h-full w-full object-cover"
             fetchpriority="high"
-            sizes="100vw"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-foreground/70 via-foreground/50 to-foreground/80" />
 
@@ -93,7 +91,7 @@ const Index = () => {
               </div>
               <Button asChild variant="ghost" className="hidden gap-1.5 sm:inline-flex">
                 <Link to="/properties">
-                  {t("buttons.viewAll", { ns: "common" })} <ArrowRight className="h-4 w-4" />
+                  {t("buttons.viewAllProperties", { ns: "common" })} <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
             </div>

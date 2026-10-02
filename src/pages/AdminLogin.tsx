@@ -8,9 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { toast } from "sonner";
 import { Shield } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { usePageMeta } from "@/lib/seo/usePageMeta";
+import { buildNoIndexMeta } from "@/lib/seo/core";
 
 const AdminLogin = () => {
   const { t } = useTranslation("auth");
+
+  usePageMeta(buildNoIndexMeta(t("adminLogin.title")));
+
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

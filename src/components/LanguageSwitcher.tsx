@@ -32,7 +32,8 @@ const LanguageSwitcher = ({ className }: LanguageSwitcherProps) => {
             lang={lang}
             onClick={() => handleLanguageChange(lang)}
             aria-pressed={isActive}
-            aria-label={t("languageSwitcher.switchTo", {
+            aria-label={`${t(`languageSwitcher.short.${lang}` as const)} (${t(`languageSwitcher.languages.${lang}` as const)})`}
+            title={t("languageSwitcher.switchTo", {
               language: t(`languageSwitcher.languages.${lang}` as const),
             })}
             className={cn(

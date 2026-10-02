@@ -30,6 +30,7 @@ Deno.serve(async (req) => {
     .from("properties")
     .select("title, property_public_id, updated_at, created_at")
     .eq("status", "published")
+    .eq("is_deleted", false)
     .order("created_at", { ascending: false });
 
   if (error) {

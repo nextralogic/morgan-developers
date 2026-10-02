@@ -262,6 +262,30 @@ export async function compressImageToTargetSize(
   };
 }
 
+/**
+ * Create a small WebP copy of an image for listing cards and gallery thumbnails.
+ * Returns null when the browser cannot decode or encode the image.
+ */
+export async function createThumbnail(file: Blob, maxWidth: number, quality = 0.72): Promise<Blob | null> {
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    return null;
+  }
+
+  try {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    drawScaledImage(ctx, canvas, bitmap, Math.min(1, maxWidth / bitmap.width));
+    const mimeType = supportsWebP() ? "image/webp" : "image/jpeg";
+    return await canvasToBlob(canvas, mimeType, quality);
+  } finally {
+    bitmap.close();
+  }
+}
+
 /** Format bytes to human-readable KB */
 export function formatFileSize(bytes: number): string {
   return `${(bytes / 1024).toFixed(1)} KB`;

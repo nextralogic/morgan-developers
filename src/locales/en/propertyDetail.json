@@ -1,9 +1,4 @@
 {
-  "meta": {
-    "propertyFallbackTitle": "Property",
-    "propertyFallbackDescription": "Property listing on Morgan Developers",
-    "priceSnippet": "{{type}} for sale in Nepal - NPR {{price}}"
-  },
   "errors": {
     "propertyNotFound": "Property Not Found",
     "propertyUnavailable": "This property may have been removed or is no longer available."
@@ -32,6 +27,12 @@
   },
   "gallery": {
     "noImages": "No images available",
-    "imageAlt": "{{title}} - image {{index}}"
+    "imageAlt": "{{title}} - image {{index}}",
+    "previous": "Previous photo",
+    "next": "Next photo",
+    "showPhoto": "Show photo {{index}}"
+  },
+  "breadcrumb": {
+    "ariaLabel": "Breadcrumb"
   }
 }

@@ -10,9 +10,14 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Mail } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { usePageMeta } from "@/lib/seo/usePageMeta";
+import { buildNoIndexMeta } from "@/lib/seo/core";
 
 const ForgotPassword = () => {
   const { t } = useTranslation("auth");
+
+  usePageMeta(buildNoIndexMeta(t("forgot.title")));
+
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);

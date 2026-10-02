@@ -24,6 +24,8 @@ import AdminAuditLogs from "@/pages/AdminAuditLogs";
 import AdminUserManagement from "@/pages/AdminUserManagement";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
+import { usePageMeta } from "@/lib/seo/usePageMeta";
+import { buildNoIndexMeta } from "@/lib/seo/core";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -34,6 +36,9 @@ const STATUS_COLORS: Record<string, string> = {
 
 const AdminDashboard = () => {
   const { t, i18n } = useTranslation(["admin", "common"]);
+
+  usePageMeta(buildNoIndexMeta(t("dashboard.header.title", { ns: "admin" })));
+
   const numberLocale = i18n.resolvedLanguage?.startsWith("ne") ? "ne-NP" : "en-US";
   const navigate = useNavigate();
   const queryClient = useQueryClient();

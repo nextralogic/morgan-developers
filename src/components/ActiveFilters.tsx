@@ -62,7 +62,12 @@ const ActiveFilters = ({ filters, onUpdate, onReset }: ActiveFiltersProps) => {
       {badges.map((b, i) => (
         <Badge key={i} variant="secondary" className="gap-1 pl-2.5 pr-1.5 py-1 text-xs font-medium">
           {b.label}
-          <button onClick={b.onRemove} className="ml-0.5 rounded-full p-0.5 hover:bg-muted-foreground/20">
+          <button
+            type="button"
+            onClick={b.onRemove}
+            aria-label={t("filters.removeFilter", { ns: "properties", label: b.label })}
+            className="ml-0.5 rounded-full p-0.5 hover:bg-muted-foreground/20"
+          >
             <X className="h-3 w-3" />
           </button>
         </Badge>

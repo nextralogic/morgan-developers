@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Maximize } from "lucide-react";
 import { formatAreaWithUnit } from "@/lib/area-utils";
 import { buildPropertyUrl } from "@/lib/property-url";
+import { getThumbnailUrl } from "@/lib/image-url";
 import { useTranslation } from "react-i18next";
 
 interface PropertyCardProps {
@@ -17,29 +18,11 @@ interface PropertyCardProps {
   areaValue?: number;
   areaUnit?: string;
   propertyPublicId?: number;
+  /** Load eagerly for cards visible on first paint. */
+  priority?: boolean;
 }
 
-const getOptimizedImageUrl = (url: string, width: number) => {
-  if (!url) return url;
-  // Supabase storage: use render/image transform endpoint
-  if (url.includes('supabase.co/storage/v1/object/public/')) {
-    return url.replace(
-      '/storage/v1/object/public/',
-      `/storage/v1/render/image/public/`
-    ) + `?width=${width}&resize=contain`;
-  }
-  // Unsplash: adjust w & q params
-  if (url.includes('images.unsplash.com')) {
-    const u = new URL(url);
-    u.searchParams.set('w', String(width));
-    u.searchParams.set('q', '75');
-    u.searchParams.set('fm', 'webp');
-    return u.toString();
-  }
-  return url;
-};
-
-const PropertyCard = ({ id, title, price, type, imageUrl, locationName, areaSqft, areaValue, areaUnit, propertyPublicId }: PropertyCardProps) => {
+const PropertyCard = ({ id, title, price, type, imageUrl, locationName, areaSqft, areaValue, areaUnit, propertyPublicId, priority = false }: PropertyCardProps) => {
   const { t, i18n } = useTranslation("common");
   const numberLocale = i18n.resolvedLanguage?.startsWith("ne") ? "ne-NP" : "en-US";
   const typeLabels: Record<string, string> = {
@@ -54,11 +37,12 @@ const PropertyCard = ({ id, title, price, type, imageUrl, locationName, areaSqft
         <div className="aspect-[4/3] overflow-hidden bg-muted">
           {imageUrl ? (
             <img
-              src={getOptimizedImageUrl(imageUrl, 480)}
+              src={getThumbnailUrl(imageUrl)}
               data-fallback-src={imageUrl}
               alt={title}
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-              loading="lazy"
+              loading={priority ? "eager" : "lazy"}
+              fetchpriority={priority ? "high" : "auto"}
               width={400}
               height={300}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

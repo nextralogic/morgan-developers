@@ -25,9 +25,14 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useTranslation } from "react-i18next";
+import { usePageMeta } from "@/lib/seo/usePageMeta";
+import { buildNoIndexMeta } from "@/lib/seo/core";
 
 const MyProperties = () => {
   const { t } = useTranslation(["owner", "common"]);
+
+  usePageMeta(buildNoIndexMeta(t("myProperties.header.title", { ns: "owner" })));
+
   const { user, loading: authLoading, isAdmin } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();

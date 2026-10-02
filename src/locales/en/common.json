@@ -11,7 +11,8 @@
     "signIn": "Sign In",
     "signUp": "Sign Up",
     "signOut": "Sign Out",
-    "navigation": "Navigation"
+    "navigation": "Navigation",
+    "openMenu": "Open menu"
   },
   "languageSwitcher": {
     "ariaLabel": "Select language",

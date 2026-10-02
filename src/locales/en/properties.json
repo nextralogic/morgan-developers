@@ -1,11 +1,7 @@
 {
-  "meta": {
-    "title": "Browse Properties",
-    "description": "Browse curated real estate listings across Nepal - apartments, houses, and land from Morgan Developers."
-  },
   "header": {
     "eyebrow": "Browse",
-    "title": "Properties",
+    "title": "Property for Sale in Nepal",
     "description": "Browse our curated listings across Nepal."
   },
   "search": {
@@ -26,7 +22,8 @@
       "priceHigh": "Price: High to Low",
       "areaHigh": "Area ↓"
     },
-    "priceDisplay": "NPR {{min}} - NPR {{max}}"
+    "priceDisplay": "NPR {{min}} - NPR {{max}}",
+    "removeFilter": "Remove filter: {{label}}"
   },
   "results": {
     "noneTitle": "No properties found",
@@ -34,7 +31,8 @@
     "clearAllFilters": "Clear All Filters",
     "found_one": "{{count}} property found",
     "found_other": "{{count}} properties found",
-    "sortedBy": "· Sorted by {{label}}"
+    "sortedBy": "· Sorted by {{label}}",
+    "heading": "Available properties"
   },
   "address": {
     "province": "Province",

@@ -36,9 +36,9 @@ const FilterSidebar = ({
     <aside className="space-y-7 rounded-xl border bg-card p-6">
       {/* Location */}
       <div>
-        <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           {t("filters.location", { ns: "properties" })}
-        </h3>
+        </p>
         <NepalAddressSelect value={locationAddress} onChange={onLocationAddressChange} compact />
       </div>
 

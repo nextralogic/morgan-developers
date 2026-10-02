@@ -53,10 +53,9 @@ if (!i18n.isInitialized) {
     .init({
       resources,
       supportedLngs: [...SUPPORTED_LANGUAGES],
-      fallbackLng: "ne",
+      fallbackLng: "en",
       defaultNS: "common",
       ns: ["common", "home", "properties", "propertyDetail", "lead", "auth", "owner", "admin"],
-      lng: "ne",
       interpolation: {
         escapeValue: false,
       },
