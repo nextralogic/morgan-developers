@@ -12,15 +12,31 @@ import {
   parsePropertyPublicId,
   type MetaTags,
   type SeoLocation,
+  type SeoProperty,
 } from "../../src/lib/seo/core.ts";
+import { getThumbnailUrl } from "../../src/lib/image-url.ts";
+import { buildLandConversionMeta, findConversionPair } from "../../src/lib/land-conversions.ts";
+import {
+  injectPageContent,
+  LISTING_PAGE_SIZE,
+  LISTING_SUMMARY_SELECT,
+  listingCardImage,
+  renderHomeContent,
+  renderLandConversionContent,
+  renderLandConverterContent,
+  renderListingIndexContent,
+  renderNotFoundContent,
+  renderPropertyContent,
+  type ListingSummary,
+} from "../lib/page-content.ts";
 import { getSiteUrl, supabaseRest } from "../lib/supabase-rest.ts";
 
 /**
  * Renders page-specific <head> tags (title, description, canonical, robots,
  * Open Graph, JSON-LD) into the SPA shell so crawlers and link previews see
- * them without running JavaScript. Also returns real 404/410 status codes and
- * 301s non-canonical listing URLs. Any upstream failure falls back to the
- * untouched page.
+ * them without running JavaScript, along with a plain HTML copy of the main
+ * content. Also returns real 404/410 status codes and 301s non-canonical
+ * listing URLs. Any upstream failure falls back to the untouched page.
  */
 
 const PRIVATE_PATHS = [
@@ -68,19 +84,52 @@ interface PropertyRow {
   property_images: { image_url: string; is_primary: boolean; display_order: number }[] | null;
 }
 
-type RouteResult = { meta: MetaTags; status?: number } | { redirect: string };
+type RouteResult = { meta: MetaTags; status?: number; content?: string } | { redirect: string };
+
+function notFound(gone = false): RouteResult {
+  return {
+    meta: buildNoIndexMeta(gone ? "Property No Longer Available" : "Page Not Found"),
+    status: gone ? 410 : 404,
+    content: renderNotFoundContent(gone),
+  };
+}
+
+async function fetchListings(offset: number, limit: number): Promise<ListingSummary[] | null> {
+  const result = await supabaseRest<ListingSummary[]>(
+    `properties?select=${LISTING_SUMMARY_SELECT}&status=eq.published&is_deleted=eq.false` +
+      `&order=created_at.desc&offset=${offset}&limit=${limit}`
+  );
+  return result?.data ?? null;
+}
+
+async function resolveListingIndex(url: URL, siteUrl: string): Promise<RouteResult> {
+  const meta = buildListingIndexMeta(siteUrl, url.searchParams);
+  // Filtered views are noindex, so they are served without the extra lookup.
+  if (meta.robots) return { meta };
+
+  const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10) || 1);
+  const listings = await fetchListings((page - 1) * LISTING_PAGE_SIZE, LISTING_PAGE_SIZE);
+  if (!listings) return { meta };
+  if (listings.length === 0 && page > 1) return notFound();
+
+  const firstImage = listings[0] ? listingCardImage(listings[0]) : null;
+  return {
+    meta: firstImage ? { ...meta, preloadImage: { href: getThumbnailUrl(firstImage) } } : meta,
+    content: renderListingIndexContent(listings, page),
+  };
+}
 
 async function resolveProperty(url: URL, slug: string, siteUrl: string): Promise<RouteResult | null> {
   const publicId = parsePropertyPublicId(slug);
   const filter = publicId ? `property_public_id=eq.${publicId}` : isUUID(slug) ? `id=eq.${slug}` : null;
-  if (!filter) return { meta: buildNoIndexMeta("Page Not Found"), status: 404 };
+  if (!filter) return notFound();
 
   const result = await supabaseRest<PropertyRow[]>(`properties?select=${PROPERTY_SELECT}&${filter}&limit=1`);
   if (!result) return null;
 
   const row = result.data[0];
   // Row level security hides drafts and removed listings, so a miss means the listing is gone.
-  if (!row) return { meta: buildNoIndexMeta("Property No Longer Available"), status: 410 };
+  if (!row) return notFound(true);
 
   const canonicalPath = buildPropertyPath(row.title, row.property_public_id);
   if (url.pathname !== canonicalPath) return { redirect: canonicalPath };
@@ -89,34 +138,41 @@ async function resolveProperty(url: URL, slug: string, siteUrl: string): Promise
     (a, b) => Number(b.is_primary) - Number(a.is_primary) || a.display_order - b.display_order
   );
 
-  return {
-    meta: buildPropertyMeta(siteUrl, {
-      title: row.title,
-      description: row.description,
-      price: Number(row.price),
-      type: row.type,
-      status: row.status,
-      areaSqft: row.area_sqft ? Number(row.area_sqft) : null,
-      areaValue: row.area_value ? Number(row.area_value) : null,
-      areaUnit: row.area_unit,
-      propertyPublicId: row.property_public_id,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-      imageUrls: images.map((img) => img.image_url),
-      location: row.locations,
-    }),
+  const property: SeoProperty = {
+    title: row.title,
+    description: row.description,
+    price: Number(row.price),
+    type: row.type,
+    status: row.status,
+    areaSqft: row.area_sqft ? Number(row.area_sqft) : null,
+    areaValue: row.area_value ? Number(row.area_value) : null,
+    areaUnit: row.area_unit,
+    propertyPublicId: row.property_public_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    imageUrls: images.map((img) => img.image_url),
+    location: row.locations,
   };
+  return { meta: buildPropertyMeta(siteUrl, property), content: renderPropertyContent(property) };
 }
 
 async function resolveRoute(url: URL, siteUrl: string): Promise<RouteResult | null> {
   const path = url.pathname;
 
-  if (path === "/" || path === "/index.html") return { meta: buildHomeMeta(siteUrl) };
-  if (path === "/properties" || path === "/properties/") {
-    return { meta: buildListingIndexMeta(siteUrl, url.searchParams) };
+  if (path === "/" || path === "/index.html") {
+    const latest = await fetchListings(0, 6);
+    return { meta: buildHomeMeta(siteUrl), content: renderHomeContent(latest ?? []) };
   }
+  if (path === "/properties" || path === "/properties/") return resolveListingIndex(url, siteUrl);
   if (path === LAND_CONVERTER_PATH || path === `${LAND_CONVERTER_PATH}/`) {
-    return { meta: buildLandConverterMeta(siteUrl) };
+    return { meta: buildLandConverterMeta(siteUrl), content: renderLandConverterContent() };
+  }
+  const conversionMatch = path.match(/^\/land-unit-converter\/([^/]+)\/?$/);
+  if (conversionMatch) {
+    const pair = findConversionPair(conversionMatch[1]);
+    return pair
+      ? { meta: buildLandConversionMeta(siteUrl, pair), content: renderLandConversionContent(pair) }
+      : notFound();
   }
   if (PRIVATE_PATHS.some((pattern) => pattern.test(path))) {
     return { meta: buildNoIndexMeta("Account") };
@@ -125,7 +181,7 @@ async function resolveRoute(url: URL, siteUrl: string): Promise<RouteResult | nu
   const propertyMatch = path.match(/^\/properties\/([^/]+)\/?$/);
   if (propertyMatch) return resolveProperty(url, decodeURIComponent(propertyMatch[1]), siteUrl);
 
-  return { meta: buildNoIndexMeta("Page Not Found"), status: 404 };
+  return notFound();
 }
 
 export default async (request: Request, context: Context) => {
@@ -156,7 +212,10 @@ export default async (request: Request, context: Context) => {
   headers.delete("etag");
   for (const [name, value] of Object.entries(CACHE_HEADERS)) headers.set(name, value);
 
-  const body = request.method === "HEAD" ? null : injectHeadTags(await response.text(), result.meta, siteUrl);
+  const body =
+    request.method === "HEAD"
+      ? null
+      : injectPageContent(injectHeadTags(await response.text(), result.meta, siteUrl), result.content ?? "");
   return new Response(body, { status: result.status ?? 200, headers });
 };
 

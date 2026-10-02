@@ -41,7 +41,7 @@ export interface MetaTags {
   ogImage?: string;
   ogImageAlt?: string;
   jsonLd?: JsonLd[];
-  preloadImage?: { srcSet: string; sizes: string; href: string };
+  preloadImage?: { href: string; srcSet?: string; sizes?: string };
 }
 
 export interface SeoLocation {
@@ -241,6 +241,7 @@ export function buildPropertyMeta(siteUrl: string, p: SeoProperty): MetaTags {
     ogType: "article",
     ogImage: p.imageUrls?.[0],
     ogImageAlt: p.title,
+    preloadImage: p.imageUrls?.[0] ? { href: p.imageUrls[0] } : undefined,
     jsonLd: [
       buildPropertyJsonLd(siteUrl, p),
       buildBreadcrumbJsonLd([
@@ -395,7 +396,7 @@ export function buildPropertyJsonLd(siteUrl: string, p: SeoProperty): JsonLd {
 export const HEAD_START = "<!--seo-->";
 export const HEAD_END = "<!--/seo-->";
 
-function escapeAttr(value: string): string {
+export function escapeHtml(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
@@ -408,29 +409,32 @@ export function serializeJsonLd(data: JsonLd): string {
   return JSON.stringify(data).replace(/</g, "\\u003c");
 }
 
+function renderImagePreload({ href, srcSet, sizes }: NonNullable<MetaTags["preloadImage"]>): string {
+  const responsive = srcSet ? ` imagesrcset="${escapeHtml(srcSet)}" imagesizes="${escapeHtml(sizes ?? "100vw")}"` : "";
+  return `<link rel="preload" as="image" href="${escapeHtml(href)}"${responsive} fetchpriority="high" />`;
+}
+
 export function renderHeadTags(meta: MetaTags, siteUrl: string): string {
   const ogImage = meta.ogImage ?? `${siteUrl}${DEFAULT_OG_IMAGE_PATH}`;
   const ogImageAlt = meta.ogImageAlt ?? DEFAULT_OG_IMAGE_ALT;
   const description = meta.description ?? "";
   const tags = [
     `<title>${escapeText(meta.title)}</title>`,
-    description ? `<meta name="description" content="${escapeAttr(description)}" />` : "",
-    meta.robots ? `<meta name="robots" content="${escapeAttr(meta.robots)}" />` : "",
-    meta.canonical ? `<link rel="canonical" href="${escapeAttr(meta.canonical)}" />` : "",
+    description ? `<meta name="description" content="${escapeHtml(description)}" />` : "",
+    meta.robots ? `<meta name="robots" content="${escapeHtml(meta.robots)}" />` : "",
+    meta.canonical ? `<link rel="canonical" href="${escapeHtml(meta.canonical)}" />` : "",
     `<meta property="og:site_name" content="${SITE_NAME}" />`,
     `<meta property="og:type" content="${meta.ogType ?? "website"}" />`,
-    `<meta property="og:title" content="${escapeAttr(meta.title)}" />`,
-    description ? `<meta property="og:description" content="${escapeAttr(description)}" />` : "",
-    meta.canonical ? `<meta property="og:url" content="${escapeAttr(meta.canonical)}" />` : "",
-    `<meta property="og:image" content="${escapeAttr(ogImage)}" />`,
-    `<meta property="og:image:alt" content="${escapeAttr(ogImageAlt)}" />`,
+    `<meta property="og:title" content="${escapeHtml(meta.title)}" />`,
+    description ? `<meta property="og:description" content="${escapeHtml(description)}" />` : "",
+    meta.canonical ? `<meta property="og:url" content="${escapeHtml(meta.canonical)}" />` : "",
+    `<meta property="og:image" content="${escapeHtml(ogImage)}" />`,
+    `<meta property="og:image:alt" content="${escapeHtml(ogImageAlt)}" />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
-    `<meta name="twitter:title" content="${escapeAttr(meta.title)}" />`,
-    description ? `<meta name="twitter:description" content="${escapeAttr(description)}" />` : "",
-    `<meta name="twitter:image" content="${escapeAttr(ogImage)}" />`,
-    meta.preloadImage
-      ? `<link rel="preload" as="image" href="${meta.preloadImage.href}" imagesrcset="${meta.preloadImage.srcSet}" imagesizes="${meta.preloadImage.sizes}" fetchpriority="high" />`
-      : "",
+    `<meta name="twitter:title" content="${escapeHtml(meta.title)}" />`,
+    description ? `<meta name="twitter:description" content="${escapeHtml(description)}" />` : "",
+    `<meta name="twitter:image" content="${escapeHtml(ogImage)}" />`,
+    meta.preloadImage ? renderImagePreload(meta.preloadImage) : "",
     ...(meta.jsonLd ?? []).map((data) => `<script type="application/ld+json" data-seo>${serializeJsonLd(data)}</script>`),
   ];
   return tags.filter(Boolean).join("\n    ");

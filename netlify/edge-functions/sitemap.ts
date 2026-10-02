@@ -1,5 +1,6 @@
 import type { Config } from "@netlify/edge-functions";
 import { buildPropertyPath, LAND_CONVERTER_PATH } from "../../src/lib/seo/core.ts";
+import { CONVERSION_PAIRS, conversionPath } from "../../src/lib/land-conversions.ts";
 import { getSiteUrl, parseTotalCount, supabaseRest } from "../lib/supabase-rest.ts";
 
 /**
@@ -29,8 +30,9 @@ function toDate(value: string | null | undefined): string | null {
   return value ? value.split("T")[0] : null;
 }
 
-function urlEntry(loc: string, lastmod: string | null): string {
-  return `  <url><loc>${escapeXml(loc)}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}</url>`;
+function urlEntry(loc: string, lastmod: string | null, images: string[] = []): string {
+  const imageTags = images.map((image) => `<image:image><image:loc>${escapeXml(image)}</image:loc></image:image>`);
+  return `  <url><loc>${escapeXml(loc)}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}${imageTags.join("")}</url>`;
 }
 
 function xmlResponse(body: string): Response {
@@ -79,22 +81,40 @@ async function pagesSitemap(siteUrl: string): Promise<Response> {
     urlEntry(`${siteUrl}/`, lastmod),
     urlEntry(`${siteUrl}/properties`, lastmod),
     urlEntry(`${siteUrl}${LAND_CONVERTER_PATH}`, null),
+    ...CONVERSION_PAIRS.map((pair) => urlEntry(`${siteUrl}${conversionPath(pair)}`, null)),
   ];
   return xmlResponse(`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.join("\n")}\n</urlset>`);
 }
 
+interface SitemapListing {
+  title: string;
+  property_public_id: number;
+  updated_at: string;
+  property_images: { image_url: string; is_primary: boolean; display_order: number | null }[] | null;
+}
+
+/** Listing photos, main photo first, so Google Images can find them without rendering the gallery. */
+function listingImages(row: SitemapListing): string[] {
+  return [...(row.property_images ?? [])]
+    .sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || (a.display_order ?? 0) - (b.display_order ?? 0))
+    .map((img) => img.image_url);
+}
+
 async function propertiesSitemap(siteUrl: string, page: number): Promise<Response> {
-  const result = await supabaseRest<{ title: string; property_public_id: number; updated_at: string }[]>(
-    `properties?select=title,property_public_id,updated_at&${LISTING_FILTER}` +
-      `&order=property_public_id.asc&offset=${(page - 1) * PAGE_SIZE}&limit=${PAGE_SIZE}`
+  const result = await supabaseRest<SitemapListing[]>(
+    `properties?select=title,property_public_id,updated_at,property_images(image_url,is_primary,display_order)` +
+      `&${LISTING_FILTER}&order=property_public_id.asc&offset=${(page - 1) * PAGE_SIZE}&limit=${PAGE_SIZE}`
   );
   if (!result) return unavailable();
   if (result.data.length === 0 && page > 1) return new Response("Not found", { status: 404 });
 
   const entries = result.data.map((row) =>
-    urlEntry(`${siteUrl}${buildPropertyPath(row.title, row.property_public_id)}`, toDate(row.updated_at))
+    urlEntry(`${siteUrl}${buildPropertyPath(row.title, row.property_public_id)}`, toDate(row.updated_at), listingImages(row))
   );
-  return xmlResponse(`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.join("\n")}\n</urlset>`);
+  return xmlResponse(
+    `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n` +
+      `${entries.join("\n")}\n</urlset>`
+  );
 }
 
 export default async (request: Request) => {

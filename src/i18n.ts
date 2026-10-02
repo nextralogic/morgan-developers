@@ -12,16 +12,6 @@ import enOwner from "@/locales/en/owner.json";
 import enAdmin from "@/locales/en/admin.json";
 import enTools from "@/locales/en/tools.json";
 
-import neCommon from "@/locales/ne/common.json";
-import neHome from "@/locales/ne/home.json";
-import neProperties from "@/locales/ne/properties.json";
-import nePropertyDetail from "@/locales/ne/propertyDetail.json";
-import neLead from "@/locales/ne/lead.json";
-import neAuth from "@/locales/ne/auth.json";
-import neOwner from "@/locales/ne/owner.json";
-import neAdmin from "@/locales/ne/admin.json";
-import neTools from "@/locales/ne/tools.json";
-
 export const SUPPORTED_LANGUAGES = ["en", "ne"] as const;
 export type AppLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 
@@ -36,17 +26,6 @@ const resources = {
     owner: enOwner,
     admin: enAdmin,
     tools: enTools,
-  },
-  ne: {
-    common: neCommon,
-    home: neHome,
-    properties: neProperties,
-    propertyDetail: nePropertyDetail,
-    lead: neLead,
-    auth: neAuth,
-    owner: neOwner,
-    admin: neAdmin,
-    tools: neTools,
   },
 } as const;
 
@@ -72,6 +51,25 @@ if (!i18n.isInitialized) {
         useSuspense: false,
       },
     });
+}
+
+/** Nepali strings are fetched on demand so English visitors do not download them. */
+export async function loadLanguage(lng: AppLanguage): Promise<void> {
+  if (lng === "en" || i18n.hasResourceBundle(lng, "common")) return;
+  const { default: bundles } = await import("@/locales/ne");
+  for (const [ns, data] of Object.entries(bundles)) {
+    i18n.addResourceBundle(lng, ns, data, true, true);
+  }
+}
+
+export async function setLanguage(lng: AppLanguage): Promise<void> {
+  await loadLanguage(lng);
+  await i18n.changeLanguage(lng);
+}
+
+const detectedLanguage = (i18n.language || "en").split("-")[0] as AppLanguage;
+if (detectedLanguage !== "en" && SUPPORTED_LANGUAGES.includes(detectedLanguage)) {
+  void setLanguage(detectedLanguage);
 }
 
 if (typeof document !== "undefined") {

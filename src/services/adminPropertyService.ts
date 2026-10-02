@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { logAction } from "@/services/auditService";
+import { notifyListingChanged } from "@/lib/indexnow";
 
 export interface AdminPropertyFilters {
   query?: string;
@@ -76,7 +77,7 @@ export async function updatePropertyStatus(
   // Fetch current status for audit metadata
   const { data: current } = await supabase
     .from("properties")
-    .select("status, title")
+    .select("status, title, property_public_id")
     .eq("id", propertyId)
     .single();
 
@@ -85,6 +86,10 @@ export async function updatePropertyStatus(
     .update({ status: newStatus as any })
     .eq("id", propertyId);
   if (error) throw error;
+
+  if (current && (current.status === "published" || newStatus === "published")) {
+    notifyListingChanged(current);
+  }
 
   // Best-effort audit log
   const action = newStatus === "published" ? "publish" : newStatus === "draft" ? "unpublish" : "status_change";
@@ -99,7 +104,7 @@ export async function updatePropertyStatus(
 export async function archiveProperty(propertyId: string) {
   const { data: current } = await supabase
     .from("properties")
-    .select("title")
+    .select("title, status, property_public_id")
     .eq("id", propertyId)
     .single();
 
@@ -109,6 +114,8 @@ export async function archiveProperty(propertyId: string) {
     .eq("id", propertyId);
   if (error) throw error;
 
+  if (current?.status === "published") notifyListingChanged(current);
+
   logAction("property", propertyId, "archive", { title: current?.title });
 }
 
@@ -116,7 +123,7 @@ export async function archiveProperty(propertyId: string) {
 export async function restoreProperty(propertyId: string) {
   const { data: current } = await supabase
     .from("properties")
-    .select("title")
+    .select("title, status, property_public_id")
     .eq("id", propertyId)
     .single();
 
@@ -125,6 +132,8 @@ export async function restoreProperty(propertyId: string) {
     .update({ is_deleted: false } as any)
     .eq("id", propertyId);
   if (error) throw error;
+
+  if (current?.status === "published") notifyListingChanged(current);
 
   logAction("property", propertyId, "restore", { title: current?.title });
 }

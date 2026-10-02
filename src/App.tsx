@@ -1,5 +1,4 @@
 import { lazy, Suspense } from "react";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { PageTransition } from "@/components/PageTransition";
@@ -17,7 +16,9 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const MyProperties = lazy(() => import("./pages/MyProperties"));
 const PropertyForm = lazy(() => import("./pages/PropertyForm"));
 const LandUnitConverter = lazy(() => import("./pages/LandUnitConverter"));
+const LandUnitConversion = lazy(() => import("./pages/LandUnitConversion"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Toaster = lazy(() => import("@/components/ui/sonner").then((m) => ({ default: m.Toaster })));
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const AnimatedRoutes = () => {
         <Route path="/properties" element={<PageTransition><Properties /></PageTransition>} />
         <Route path="/properties/:slug" element={<PageTransition><PropertyDetail /></PageTransition>} />
         <Route path="/land-unit-converter" element={<PageTransition><LandUnitConverter /></PageTransition>} />
+        <Route path="/land-unit-converter/:pair" element={<PageTransition><LandUnitConversion /></PageTransition>} />
         <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
         <Route path="/signup" element={<PageTransition><Signup /></PageTransition>} />
         <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />
@@ -47,7 +49,9 @@ const AnimatedRoutes = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <Sonner />
+    <Suspense fallback={null}>
+      <Toaster />
+    </Suspense>
     <BrowserRouter>
       <AuthProvider>
         <AnimatedRoutes />

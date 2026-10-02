@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { SUPPORTED_LANGUAGES, type AppLanguage } from "@/i18n";
+import { SUPPORTED_LANGUAGES, setLanguage, type AppLanguage } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 interface LanguageSwitcherProps {
@@ -14,7 +14,7 @@ const LanguageSwitcher = ({ className }: LanguageSwitcherProps) => {
 
   const handleLanguageChange = (lang: AppLanguage) => {
     if (lang === activeLanguage) return;
-    void i18n.changeLanguage(lang);
+    void setLanguage(lang);
   };
 
   return (

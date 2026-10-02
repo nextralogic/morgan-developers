@@ -21,6 +21,7 @@ import { AREA_UNITS, convertToSqft, type AreaUnit } from "@/lib/area-utils";
 import { useTranslation } from "react-i18next";
 import { usePageMeta } from "@/lib/seo/usePageMeta";
 import { buildNoIndexMeta } from "@/lib/seo/core";
+import { notifyListingChanged } from "@/lib/indexnow";
 
 const EMPTY_ADDRESS: NepalAddress = { province: "", district: "", municipality_or_city: "", ward: null, area_name: "" };
 
@@ -165,6 +166,7 @@ const PropertyForm = () => {
     }
 
     let propertyId = id;
+    let publicId = existingProperty?.property_public_id;
 
     if (isEdit) {
       const { error } = await supabase.from("properties").update(propertyData as any).eq("id", id!);
@@ -174,6 +176,7 @@ const PropertyForm = () => {
       const { data, error } = await supabase.from("properties").insert(propertyData as any).select("id, property_public_id").single();
       if (error) { toast.error(t("propertyForm.toasts.createFailed", { ns: "owner" })); setSaving(false); return; }
       propertyId = data.id;
+      publicId = data.property_public_id;
     }
 
     if (images.length > 0 && propertyId) {
@@ -184,6 +187,15 @@ const PropertyForm = () => {
         display_order: i,
       }));
       await supabase.from("property_images").insert(imgRows);
+    }
+
+    // Let search engines recrawl the listing when its public page changed. A new title also changes the URL.
+    const wasPublished = existingProperty?.status === "published";
+    if (publicId && (statusToSave === "published" || wasPublished)) {
+      notifyListingChanged(
+        { title: form.title, property_public_id: publicId },
+        ...(wasPublished ? [{ title: existingProperty.title, property_public_id: publicId }] : [])
+      );
     }
 
     setSaving(false);

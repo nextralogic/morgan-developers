@@ -25,6 +25,67 @@
       "title": "जग्गा खोज्दै हुनुहुन्छ?",
       "text": "नेपालभरि बिक्रीमा रहेका जग्गा, घर र अपार्टमेन्टहरू स्थानीय नापमा क्षेत्रफलसहित हेर्नुहोस्।",
       "button": "बिक्रीमा रहेको जग्गा हेर्नुहोस्"
+    },
+    "popularTitle": "लोकप्रिय रूपान्तरण",
+    "fullConverter": "सबै एकाइबीच रूपान्तरण गर्न पूरा जग्गा नाप रूपान्तरक प्रयोग गर्नुहोस्",
+    "pair": {
+      "breadcrumb": "{{from}} बाट {{to}}",
+      "title": "{{from}} बाट {{to}} रूपान्तरक",
+      "equation": "{{amount}} {{from}} = {{value}} {{to}}",
+      "formulaTitle": "{{from}} लाई {{to}} मा कसरी बदल्ने",
+      "formulaMultiply": "{{from}} लाई {{to}} मा बदल्न {{from}} को संख्यालाई {{factor}} ले गुणन गर्नुहोस्। उदाहरणका लागि, {{amount}} × {{factor}} = {{value}} {{resultUnit}}।",
+      "formulaDivide": "{{from}} लाई {{to}} मा बदल्न {{from}} को संख्यालाई {{divisor}} ले भाग गर्नुहोस्। उदाहरणका लागि, {{amount}} ÷ {{divisor}} = {{value}} {{resultUnit}}।",
+      "tableTitle": "{{from}} बाट {{to}} रूपान्तरण तालिका",
+      "otherTitle": "जग्गा नापका अन्य रूपान्तरण"
+    },
+    "units": {
+      "sq_feet": {
+        "title": "वर्ग फिट",
+        "name": "वर्ग फिट"
+      },
+      "sq_meter": {
+        "title": "वर्ग मिटर",
+        "name": "वर्ग मिटर"
+      },
+      "ropani": {
+        "title": "रोपनी",
+        "name": "रोपनी"
+      },
+      "aana": {
+        "title": "आना",
+        "name": "आना",
+        "spelling": "अङ्ग्रेजीमा आनालाई aana वा anna लेखिन्छ।"
+      },
+      "paisa": {
+        "title": "पैसा",
+        "name": "पैसा"
+      },
+      "daam": {
+        "title": "दाम",
+        "name": "दाम",
+        "spelling": "अङ्ग्रेजीमा दामलाई daam वा dam लेखिन्छ।"
+      },
+      "bigha": {
+        "title": "बिघा",
+        "name": "बिघा"
+      },
+      "kattha": {
+        "title": "कट्ठा",
+        "name": "कट्ठा",
+        "spelling": "अङ्ग्रेजीमा कट्ठालाई kattha वा katha लेखिन्छ।"
+      },
+      "dhur": {
+        "title": "धुर",
+        "name": "धुर"
+      },
+      "haat": {
+        "title": "हात",
+        "name": "हात"
+      },
+      "acres": {
+        "title": "एकड",
+        "name": "एकड"
+      }
     }
   }
 }

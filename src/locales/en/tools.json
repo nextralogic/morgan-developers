@@ -25,6 +25,70 @@
       "title": "Looking for land?",
       "text": "Browse land, houses and apartments for sale across Nepal, with the area shown in local units.",
       "button": "Browse land for sale"
+    },
+    "popularTitle": "Popular conversions",
+    "fullConverter": "Convert between every unit in the full land unit converter",
+    "pair": {
+      "breadcrumb": "{{from}} to {{to}}",
+      "title": "{{from}} to {{to}} Converter",
+      "equation": "{{amount}} {{from}} = {{value}} {{to}}",
+      "formulaTitle": "How to convert {{from}} to {{to}}",
+      "formulaMultiply": "To convert {{from}} to {{to}}, multiply the number of {{from}} by {{factor}}. For example, {{amount}} × {{factor}} = {{value}} {{resultUnit}}.",
+      "formulaDivide": "To convert {{from}} to {{to}}, divide the number of {{from}} by {{divisor}}. For example, {{amount}} ÷ {{divisor}} = {{value}} {{resultUnit}}.",
+      "tableTitle": "{{from}} to {{to}} conversion table",
+      "otherTitle": "Other land unit conversions"
+    },
+    "units": {
+      "sq_feet": {
+        "title": "Square Feet",
+        "name_one": "square foot",
+        "name_other": "square feet"
+      },
+      "sq_meter": {
+        "title": "Square Metres",
+        "name_one": "square metre",
+        "name_other": "square metres"
+      },
+      "ropani": {
+        "title": "Ropani",
+        "name": "ropani"
+      },
+      "aana": {
+        "title": "Aana",
+        "name": "aana",
+        "spelling": "Aana is also written anna."
+      },
+      "paisa": {
+        "title": "Paisa",
+        "name": "paisa"
+      },
+      "daam": {
+        "title": "Daam",
+        "name": "daam",
+        "spelling": "Daam is also written dam."
+      },
+      "bigha": {
+        "title": "Bigha",
+        "name": "bigha"
+      },
+      "kattha": {
+        "title": "Kattha",
+        "name": "kattha",
+        "spelling": "Kattha is also written katha."
+      },
+      "dhur": {
+        "title": "Dhur",
+        "name": "dhur"
+      },
+      "haat": {
+        "title": "Haat",
+        "name": "haat"
+      },
+      "acres": {
+        "title": "Acres",
+        "name_one": "acre",
+        "name_other": "acres"
+      }
     }
   }
 }
