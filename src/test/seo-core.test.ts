@@ -5,7 +5,9 @@ import {
   buildListingIndexMeta,
   buildPropertyMeta,
   buildPropertyPath,
+  formatArea,
   formatNprShort,
+  formatPricePerUnit,
   injectHeadTags,
   parsePropertyPublicId,
   truncateText,
@@ -53,6 +55,20 @@ describe("text helpers", () => {
     expect(formatNprShort(12_500_000)).toBe("NPR 1.25 Crore");
     expect(formatNprShort(85_000)).toBe("NPR 85,000");
   });
+
+  it("formats areas with thousands separators", () => {
+    expect(formatArea({ areaValue: 2250, areaUnit: "sq_feet" })).toBe("2,250 sq ft");
+    expect(formatArea({ areaValue: 12, areaUnit: "aana" })).toBe("12 Aana");
+  });
+
+  it("quotes land prices per aana, per kattha or per sq ft", () => {
+    expect(formatPricePerUnit(land)).toBe("NPR 4.17 Lakh per aana");
+    expect(formatPricePerUnit({ ...land, price: 41_000_000, areaValue: 10, areaUnit: "kattha" })).toBe("NPR 41 Lakh per kattha");
+    expect(formatPricePerUnit({ ...land, price: 21_400_000, areaValue: 2250, areaUnit: "sq_feet" })).toBe("NPR 9,511 per sq ft");
+    expect(formatPricePerUnit({ ...land, areaValue: 2, areaUnit: "ropani" })).toBe("NPR 1.56 Lakh per aana");
+    expect(formatPricePerUnit({ ...land, type: "house" })).toBeNull();
+    expect(formatPricePerUnit({ ...land, areaValue: null, areaUnit: null })).toBeNull();
+  });
 });
 
 describe("property URLs", () => {
@@ -85,6 +101,7 @@ describe("page metadata", () => {
     expect(meta.title).toContain("Land for Sale in Danchhi, Kathmandu");
     expect(meta.title).toContain("NPR 50 Lakh");
     expect(meta.description).toContain("Land at danchhi chowk");
+    expect(meta.description).toContain("priced at NPR 50 Lakh (NPR 4.17 Lakh per aana).");
     expect(meta.canonical).toBe(`${SITE}/properties/beautiful-land-in-danchhi-1023`);
   });
 

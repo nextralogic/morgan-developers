@@ -1,8 +1,9 @@
-import { AREA_UNITS, type AreaUnit } from "../../src/lib/area-utils.ts";
+import { AREA_UNITS, listingAreaSqft, sqftToNepali, sqftToTerai, type AreaUnit } from "../../src/lib/area-utils.ts";
 import {
   CONVERSION_PAIRS,
   conversionFactor,
   conversionPath,
+  converterPairForUnit,
   exampleAmount,
   formatConverted,
   UNIT_NAMES,
@@ -15,6 +16,7 @@ import {
   formatArea,
   formatNprShort,
   formatPlace,
+  formatPricePerUnit,
   LAND_CONVERTER_PATH,
   propertyTypeLabel,
   type SeoLocation,
@@ -137,8 +139,32 @@ export function renderPropertyContent(p: SeoProperty): string {
     `<h1>${escapeHtml(p.title)}</h1>`,
     `<p>${escapeHtml(listingFacts(p))}</p>`,
     p.description?.trim() ? paragraphs(p.description) : "",
+    renderLandSize(p),
     '<p><a href="/properties">See more property for sale</a></p>',
     "</main>",
+  ].join("");
+}
+
+/** The plot size in both local systems, the price per unit, and a link to the matching converter. */
+function renderLandSize(p: SeoProperty): string {
+  const sqft = listingAreaSqft(p.areaSqft, p.areaValue, p.areaUnit);
+  if (!sqft) return "";
+  const hill = sqftToNepali(sqft);
+  const terai = sqftToTerai(sqft);
+  const perUnit = formatPricePerUnit(p);
+  const pair = converterPairForUnit(p.areaUnit);
+  const converter = pair
+    ? `<a href="${conversionPath(pair)}">${UNIT_NAMES[pair.from].title} to ${UNIT_NAMES[pair.to].title} converter</a>`
+    : `<a href="${LAND_CONVERTER_PATH}">Land unit converter</a>`;
+  return [
+    "<h2>Land size</h2>",
+    "<ul>",
+    `<li>${formatConverted(sqft)} square feet (${formatConverted(sqft / AREA_UNITS.sq_meter.toSqft)} square metres)</li>`,
+    `<li>Ropani-Aana-Paisa-Daam: ${hill.ropani}-${hill.anna}-${hill.paisa}-${hill.dam}</li>`,
+    `<li>Bigha-Kattha-Dhur: ${terai.bigha}-${terai.kattha}-${formatConverted(terai.dhur)}</li>`,
+    perUnit ? `<li>Price: ${perUnit}</li>` : "",
+    "</ul>",
+    `<p>${converter}</p>`,
   ].join("");
 }
 

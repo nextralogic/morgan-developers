@@ -38,5 +38,16 @@
   "related": {
     "title": "Similar properties",
     "titleInArea": "More properties in {{area}}"
+  },
+  "price": {
+    "perUnit": "{{price}} per {{unit}}"
+  },
+  "size": {
+    "title": "Land size in other units",
+    "sqft": "Square feet",
+    "sqm": "Square metres",
+    "hill": "Ropani-Aana-Paisa-Daam",
+    "terai": "Bigha-Kattha-Dhur",
+    "converter": "Convert {{unit}} to other units"
   }
 }

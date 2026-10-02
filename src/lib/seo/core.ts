@@ -1,6 +1,8 @@
+import { listingAreaSqft, priceQuoteUnit, pricePerUnit } from "../area-utils.ts";
+
 /**
  * Framework-agnostic SEO helpers shared by the React app and the Netlify edge
- * functions. Keep this file free of imports so it can run in Deno as well.
+ * functions. Imports keep their .ts extension so this file runs in Deno as well.
  */
 
 export const SITE_NAME = "Morgan Developers";
@@ -149,10 +151,21 @@ export function formatNprShort(price: number): string {
 
 export function formatArea(p: Pick<SeoProperty, "areaValue" | "areaUnit" | "areaSqft">): string | null {
   if (p.areaValue && p.areaUnit) {
-    return `${trimNumber(p.areaValue)} ${AREA_UNIT_LABELS[p.areaUnit] ?? p.areaUnit}`;
+    return `${p.areaValue.toLocaleString("en-US", { maximumFractionDigits: 2 })} ${AREA_UNIT_LABELS[p.areaUnit] ?? p.areaUnit}`;
   }
   if (p.areaSqft) return `${Math.round(p.areaSqft).toLocaleString("en-US")} sq ft`;
   return null;
+}
+
+/** Land price per local unit, e.g. "NPR 4.17 Lakh per aana", the figure buyers compare plots by. */
+export function formatPricePerUnit(
+  p: Pick<SeoProperty, "type" | "price" | "areaValue" | "areaUnit" | "areaSqft">
+): string | null {
+  if (p.type !== "land" || !(p.price > 0)) return null;
+  const sqft = listingAreaSqft(p.areaSqft, p.areaValue, p.areaUnit);
+  if (!sqft) return null;
+  const unit = priceQuoteUnit(p.areaUnit);
+  return `${formatNprShort(pricePerUnit(p.price, sqft, unit))} per ${AREA_UNIT_LABELS[unit].toLowerCase()}`;
 }
 
 /** Most specific place name first, e.g. "Danchhi, Kathmandu". */
@@ -226,7 +239,9 @@ export function buildPropertyDescription(p: SeoProperty): string {
   const type = propertyTypeLabel(p.type).toLowerCase();
   const place = formatPlace(p.location);
   const area = formatArea(p);
-  const facts = [`${area ? `${area} ` : ""}${type} for sale in ${place}`, `priced at ${formatNprShort(p.price)}`].join(", ");
+  const perUnit = formatPricePerUnit(p);
+  const price = `priced at ${formatNprShort(p.price)}${perUnit ? ` (${perUnit})` : ""}`;
+  const facts = [`${area ? `${area} ` : ""}${type} for sale in ${place}`, price].join(", ");
   const lead = `${facts.charAt(0).toUpperCase()}${facts.slice(1)}.`;
   const body = p.description?.trim() ? ` ${p.description.trim()}` : ` View photos and location details, and enquire with ${SITE_NAME}.`;
   return truncateText(`${lead}${body}`, DESCRIPTION_MAX);

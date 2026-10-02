@@ -5,6 +5,7 @@ import {
   conversionFactor,
   conversionPath,
   conversionSlug,
+  converterPairForUnit,
   findConversionPair,
   formatConverted,
 } from "@/lib/land-conversions";
@@ -32,6 +33,18 @@ describe("land unit conversions", () => {
       expect(conversionPath(pair)).toMatch(/^\/land-unit-converter\/[a-z-]+$/);
     }
     expect(findConversionPair("ropani-to-bananas")).toBeUndefined();
+  });
+
+  it("links each listing unit to its converter page", () => {
+    const slugFor = (unit: string | null) => {
+      const pair = converterPairForUnit(unit);
+      return pair ? conversionSlug(pair) : null;
+    };
+    expect(slugFor("aana")).toBe("aana-to-square-feet");
+    expect(slugFor("bigha")).toBe("bigha-to-square-feet");
+    expect(slugFor("sq_feet")).toBe("square-feet-to-aana");
+    expect(slugFor("sq_meter")).toBeNull();
+    expect(slugFor(null)).toBeNull();
   });
 
   it("keeps titles and descriptions within search result limits", () => {

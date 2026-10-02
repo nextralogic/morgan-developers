@@ -24,14 +24,15 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import ShareButtons from "@/components/ShareButtons";
-import { formatAreaWithUnit } from "@/lib/area-utils";
+import ListingLandSize from "@/components/ListingLandSize";
+import { formatAreaWithUnit, listingAreaSqft, priceQuoteUnit, pricePerUnit } from "@/lib/area-utils";
 import { usePageMeta } from "@/lib/seo/usePageMeta";
 import { SITE_URL } from "@/lib/seo/constants";
 import { buildNoIndexMeta, buildPropertyMeta } from "@/lib/seo/core";
 import { useTranslation } from "react-i18next";
 
 const PropertyDetail = () => {
-  const { t, i18n } = useTranslation(["propertyDetail", "common"]);
+  const { t, i18n } = useTranslation(["propertyDetail", "common", "tools"]);
   const numberLocale = i18n.resolvedLanguage?.startsWith("ne") ? "ne-NP" : "en-US";
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -206,6 +207,21 @@ const PropertyDetail = () => {
     draft: t("property.statuses.draft", { ns: "common" }),
   };
 
+  const { area_value: areaValue, area_unit: areaUnit = null } = property as {
+    area_value?: number | null;
+    area_unit?: string | null;
+  };
+  const areaSqft = listingAreaSqft(
+    property.area_sqft ? Number(property.area_sqft) : null,
+    areaValue ? Number(areaValue) : null,
+    areaUnit
+  );
+  const quoteUnit = priceQuoteUnit(areaUnit);
+  const unitPrice =
+    property.type === "land" && areaSqft && Number(property.price) > 0
+      ? pricePerUnit(Number(property.price), areaSqft, quoteUnit)
+      : null;
+
   return (
     <>
       <Navbar />
@@ -261,6 +277,15 @@ const PropertyDetail = () => {
               <p className="mt-4 font-heading text-2xl font-bold text-primary sm:text-3xl">
                 {t("currency.npr", { ns: "common", amount: Number(property.price).toLocaleString(numberLocale) })}
               </p>
+              {unitPrice !== null && (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {t("price.perUnit", {
+                    ns: "propertyDetail",
+                    price: t("currency.npr", { ns: "common", amount: Math.round(unitPrice).toLocaleString(numberLocale) }),
+                    unit: t(`landConverter.units.${quoteUnit}.name` as const, { ns: "tools", count: 1 }),
+                  })}
+                </p>
+              )}
 
               <div className="mt-4">
                 <ShareButtons title={property.title} />
@@ -305,6 +330,8 @@ const PropertyDetail = () => {
                 </p>
               </div>
             )}
+
+            {areaSqft && property.type !== "apartment" && <ListingLandSize sqft={areaSqft} unit={areaUnit} />}
 
             {amenities && amenities.length > 0 && (
               <div>

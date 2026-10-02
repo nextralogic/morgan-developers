@@ -52,6 +52,19 @@ describe("page content for crawlers", () => {
     expect(html).toContain("<p>Four bedrooms &amp; parking.</p><p>Walking distance to school.</p>");
   });
 
+  it("shows the plot size in local units with the price per unit for land", () => {
+    const land = renderPropertyContent({ ...house, type: "land", price: 5_000_000, areaValue: 12 });
+    expect(land).toContain("<li>4,107 square feet (381.55 square metres)</li>");
+    expect(land).toContain("<li>Ropani-Aana-Paisa-Daam: 0-12-0-0</li>");
+    expect(land).toContain("<li>Bigha-Kattha-Dhur: 0-1-2.53</li>");
+    expect(land).toContain("<li>Price: NPR 4.17 Lakh per aana</li>");
+    expect(land).toContain('<a href="/land-unit-converter/aana-to-square-feet">Aana to Square Feet converter</a>');
+
+    expect(renderPropertyContent(house)).not.toContain("Price:");
+    expect(renderPropertyContent({ ...house, areaUnit: "sq_meter" })).toContain('<a href="/land-unit-converter">Land unit converter</a>');
+    expect(renderPropertyContent({ ...house, areaValue: null })).not.toContain("Land size");
+  });
+
   it("links listings and pagination", () => {
     const full = Array.from({ length: LISTING_PAGE_SIZE }, (_, i) => listing(1000 + i));
     const page2 = renderListingIndexContent(full, 2);

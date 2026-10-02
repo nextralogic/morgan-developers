@@ -74,6 +74,15 @@ export function findConversionPair(slug: string): ConversionPair | undefined {
   return CONVERSION_PAIRS.find((pair) => conversionSlug(pair) === slug);
 }
 
+/** The converter page for a unit, preferring conversion to square feet. */
+export function converterPairForUnit(unit: string | null | undefined): ConversionPair | undefined {
+  if (!unit) return undefined;
+  return (
+    CONVERSION_PAIRS.find((pair) => pair.from === unit && pair.to === "sq_feet") ??
+    CONVERSION_PAIRS.find((pair) => pair.from === unit)
+  );
+}
+
 /** How many `to` units make up one `from` unit. */
 export function conversionFactor(pair: ConversionPair): number {
   return AREA_UNITS[pair.from].toSqft / AREA_UNITS[pair.to].toSqft;

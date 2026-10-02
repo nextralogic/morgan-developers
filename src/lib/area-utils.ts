@@ -70,6 +70,35 @@ export function sqftToTerai(sqft: number) {
   return { bigha, kattha, dhur };
 }
 
+const HILL_UNITS: readonly string[] = ["ropani", "aana", "paisa", "daam"];
+const TERAI_UNITS: readonly string[] = ["bigha", "kattha", "dhur"];
+
+/**
+ * The unit land prices are usually quoted in: per aana where land is measured
+ * in ropani, per kattha in the Terai, and per sq.ft otherwise.
+ */
+export function priceQuoteUnit(unit: string | null | undefined): AreaUnit {
+  if (unit && HILL_UNITS.includes(unit)) return "aana";
+  if (unit && TERAI_UNITS.includes(unit)) return "kattha";
+  return "sq_feet";
+}
+
+/** Total area in sq.ft, from the stored sq.ft value or from the entered value and unit. */
+export function listingAreaSqft(
+  sqft: number | null | undefined,
+  value: number | null | undefined,
+  unit: string | null | undefined
+): number | null {
+  if (sqft && sqft > 0) return sqft;
+  if (value && value > 0 && unit && unit in AREA_UNITS) return convertToSqft(value, unit as AreaUnit);
+  return null;
+}
+
+/** Price of one `unit` of land, e.g. NPR per aana. */
+export function pricePerUnit(price: number, sqft: number, unit: AreaUnit): number {
+  return (price / sqft) * AREA_UNITS[unit].toSqft;
+}
+
 export function formatNepaliArea(sqft: number): string {
   const { ropani, anna, paisa, dam } = sqftToNepali(sqft);
   const parts: string[] = [];
