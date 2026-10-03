@@ -73,12 +73,12 @@ const AdminLeads = ({ enabled }: AdminLeadsProps) => {
 
   const sourceLabel = (source: string | null | undefined) => {
     if (!source) return t("leads.sources.unknown");
-    return t(`leads.sources.${source}` as any, { defaultValue: source });
+    return t(`leads.sources.${source}` as "leads.sources.website", { defaultValue: source });
   };
 
   const contactTimeLabel = (value: string | null | undefined) => {
     if (!value) return "";
-    return t(`leads.contactTimes.${value}` as any, { defaultValue: value });
+    return t(`leads.contactTimes.${value}` as "leads.contactTimes.morning", { defaultValue: value });
   };
 
   const { data: result, isLoading } = useQuery({

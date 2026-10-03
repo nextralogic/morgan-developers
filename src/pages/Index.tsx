@@ -106,8 +106,8 @@ const Index = () => {
                     </div>
                   ))
                 : featured?.map((p) => {
-                    const primaryImg = (p.property_images as any[])?.find((img: any) => img.is_primary);
-                    const firstImg = (p.property_images as any[])?.[0];
+                    const primaryImg = p.property_images.find((img) => img.is_primary);
+                    const firstImg = p.property_images[0];
                     return (
                       <PropertyCard
                         key={p.id}
@@ -116,9 +116,11 @@ const Index = () => {
                         price={Number(p.price)}
                         type={p.type}
                         areaSqft={p.area_sqft ? Number(p.area_sqft) : undefined}
+                        areaValue={p.area_value ? Number(p.area_value) : undefined}
+                        areaUnit={p.area_unit || undefined}
                         imageUrl={primaryImg?.image_url || firstImg?.image_url}
-                        locationName={(p.locations as any)?.name}
-                        propertyPublicId={(p as any).property_public_id}
+                        locationName={p.locations?.name}
+                        propertyPublicId={p.property_public_id}
                       />
                     );
                   })}
@@ -162,8 +164,10 @@ const Index = () => {
                       price={Number(p.price)}
                       type={p.type}
                       areaSqft={p.area_sqft ? Number(p.area_sqft) : undefined}
+                      areaValue={p.area_value ? Number(p.area_value) : undefined}
+                      areaUnit={p.area_unit || undefined}
                       imageUrl={primaryImg?.image_url || firstImg?.image_url}
-                      locationName={(p.locations as any)?.name}
+                      locationName={p.locations?.name}
                       propertyPublicId={p.property_public_id}
                     />
                   );

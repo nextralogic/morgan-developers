@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { ilikeAny } from "@/lib/postgrest";
 
 // ─── Search filter model ────────────────────────────────────────────────────
 
@@ -153,23 +154,22 @@ export async function searchProperties(
   // so we first find matching location IDs, then use an OR of title ILIKE + location_id IN.
   if (filters.query && filters.query.trim().length > 0) {
     const q = filters.query.trim();
-    const pattern = `%${q}%`;
 
     // Find location IDs matching the search term
     const { data: matchingLocations } = await supabase
       .from("locations")
       .select("id")
-      .or(`display_name.ilike.${pattern},search_key.ilike.${pattern},name.ilike.${pattern}`)
+      .or(ilikeAny(["display_name", "search_key", "name"], q))
       .limit(100);
 
     const locationIds = matchingLocations?.map((l) => l.id) ?? [];
 
     if (locationIds.length > 0) {
       // Search title OR matching locations
-      query = query.or(`title.ilike.${pattern},location_id.in.(${locationIds.join(",")})`);
+      query = query.or(`${ilikeAny(["title"], q)},location_id.in.(${locationIds.join(",")})`);
     } else {
       // No location matches — just search title
-      query = query.ilike("title", pattern);
+      query = query.ilike("title", `%${q}%`);
     }
   }
 
@@ -213,9 +213,10 @@ export async function searchProperties(
 /** Parse URLSearchParams into PropertySearchFilters */
 export function filtersFromParams(params: URLSearchParams): PropertySearchFilters {
   const str = (key: string) => params.get(key) || undefined;
+  // Hand-edited URLs can hold anything; ignore values that are not numbers.
   const num = (key: string) => {
-    const v = params.get(key);
-    return v ? Number(v) : undefined;
+    const v = Number(params.get(key) || undefined);
+    return Number.isFinite(v) ? v : undefined;
   };
 
   return {

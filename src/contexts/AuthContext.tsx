@@ -34,35 +34,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [roles, setRoles] = useState<AppRole[]>([]);
 
-  const fetchRoles = async (userId: string) => {
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
-    const userRoles = (data ?? []).map((r) => r.role as AppRole);
-    setRoles(userRoles);
-  };
-
   useEffect(() => {
+    let latestEvent = 0;
+
+    // Also fires once on subscribe with the stored session (INITIAL_SESSION).
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const event = ++latestEvent;
       setSession(session);
       setUser(session?.user ?? null);
 
-      if (session?.user) {
-        setTimeout(() => fetchRoles(session.user.id), 0);
-      } else {
-        setRoles([]);
-      }
-      setLoading(false);
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchRoles(session.user.id);
-      }
-      setLoading(false);
+      // Supabase calls made inside this callback can deadlock the auth client, so load roles afterwards.
+      // `loading` stays true until the first roles arrive, so pages never mistake an admin for a regular user.
+      setTimeout(async () => {
+        const { data } = session?.user
+          ? await supabase.from("user_roles").select("role").eq("user_id", session.user.id)
+          : { data: [] };
+        if (event !== latestEvent) return; // a newer sign-in or sign-out has taken over
+        setRoles((data ?? []).map((r) => r.role as AppRole));
+        setLoading(false);
+      }, 0);
     });
 
     return () => subscription.unsubscribe();

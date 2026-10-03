@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/table";
 import PropertyPagination from "@/components/PropertyPagination";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 const ENTITY_TYPES = ["property", "lead", "user"] as const;
 const ACTIONS = ["publish", "unpublish", "archive", "restore", "status_change", "edit", "note_update", "role_change"] as const;
@@ -159,12 +160,12 @@ const AdminAuditLogs = ({ enabled }: Props) => {
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="text-xs">
-                      {t(`audit.entities.${log.entity_type}` as any, { defaultValue: log.entity_type })}
+                      {t(`audit.entities.${log.entity_type}` as "audit.entities.lead", { defaultValue: log.entity_type })}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${ACTION_COLORS[log.action] ?? "bg-muted text-muted-foreground"}`}>
-                      {t(`audit.actions.${log.action}` as any, { defaultValue: log.action })}
+                      {t(`audit.actions.${log.action}` as "audit.actions.edit", { defaultValue: log.action })}
                     </span>
                   </TableCell>
                   <TableCell className="hidden max-w-[120px] truncate font-mono text-xs text-muted-foreground md:table-cell">
@@ -194,10 +195,10 @@ const AdminAuditLogs = ({ enabled }: Props) => {
   );
 };
 
-function formatMetadata(meta: Record<string, unknown>, t: (key: string, options?: Record<string, unknown>) => string): string {
+function formatMetadata(meta: Record<string, unknown>, t: TFunction<"admin">): string {
   const statusLabel = (value: unknown) => {
     if (typeof value !== "string") return "";
-    return t(`propertyStatuses.${value}`, { defaultValue: value });
+    return t(`propertyStatuses.${value}` as "propertyStatuses.draft", { defaultValue: value });
   };
 
   const parts: string[] = [];

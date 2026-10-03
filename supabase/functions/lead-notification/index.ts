@@ -78,7 +78,8 @@ serve(async (req) => {
 
     console.log("Lead notification:", JSON.stringify(summary));
 
-    return new Response(JSON.stringify({ ok: true, summary }), {
+    // Anyone holding the public anon key can call this function, so the lead's details are not echoed back.
+    return new Response(JSON.stringify({ ok: true }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

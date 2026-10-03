@@ -37,8 +37,11 @@ const ConversionPage = ({ pair }: { pair: ConversionPair }) => {
   const format = (n: number) => formatConverted(n, numberLocale);
   const unitTitle = (u: AreaUnit) => t(`landConverter.units.${u}.title` as const);
   const unitName = (u: AreaUnit, count: number) => t(`landConverter.units.${u}.name` as const, { count });
-  const spelling = (u: AreaUnit) =>
-    i18n.exists(`landConverter.units.${u}.spelling`, { ns: "tools" }) ? t(`landConverter.units.${u}.spelling` as const) : null;
+  // Only some units have an alternative spelling, so the key is checked before it is read.
+  const spelling = (u: AreaUnit) => {
+    const key = `landConverter.units.${u}.spelling` as "landConverter.units.aana.spelling";
+    return i18n.exists(key, { ns: "tools" }) ? t(key) : null;
+  };
 
   const factor = conversionFactor(pair);
   const example = exampleAmount(pair);

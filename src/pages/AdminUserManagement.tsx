@@ -79,19 +79,31 @@ const AdminUserManagement = ({ enabled }: Props) => {
       const from = (page - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
 
-      const { data: profiles, error, count } = await supabase
+      let profilesQuery = supabase
         .from("profiles")
         .select("id, full_name, created_at", { count: "exact" })
         .order("created_at", { ascending: false })
         .range(from, to);
 
+      // Filter on the server so every page and the total count only include holders of the role
+      if (roleFilter !== "all") {
+        const { data: holders, error: holdersError } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", roleFilter as AppRole);
+        if (holdersError) throw holdersError;
+        profilesQuery = profilesQuery.in("id", (holders ?? []).map((h) => h.user_id));
+      }
+
+      const { data: profiles, error, count } = await profilesQuery;
       if (error) throw error;
 
       const userIds = (profiles ?? []).map((p) => p.id);
-      const { data: rolesData } = await supabase
+      const { data: rolesData, error: rolesError } = await supabase
         .from("user_roles")
         .select("user_id, role")
         .in("user_id", userIds);
+      if (rolesError) throw rolesError;
 
       const roleMap = new Map<string, AppRole[]>();
       (rolesData ?? []).forEach((r) => {
@@ -100,21 +112,14 @@ const AdminUserManagement = ({ enabled }: Props) => {
         roleMap.set(r.user_id, existing);
       });
 
-      let users: UserWithRoles[] = (profiles ?? []).map((p) => ({
+      const users: UserWithRoles[] = (profiles ?? []).map((p) => ({
         id: p.id,
         full_name: p.full_name,
         created_at: p.created_at,
         roles: roleMap.get(p.id) ?? [],
       }));
 
-      if (roleFilter !== "all") {
-        users = users.filter((u) => u.roles.includes(roleFilter as AppRole));
-      }
-
-      return {
-        users,
-        totalCount: roleFilter === "all" ? (count ?? 0) : users.length,
-      };
+      return { users, totalCount: count ?? 0 };
     },
     enabled,
   });
@@ -159,17 +164,19 @@ const AdminUserManagement = ({ enabled }: Props) => {
       }
 
       for (const role of toRemove) {
-        await supabase
+        const { error } = await supabase
           .from("user_roles")
           .delete()
           .eq("user_id", editingUser.id)
-          .eq("role", role as any);
+          .eq("role", role);
+        if (error) throw error;
       }
 
       for (const role of toAdd) {
-        await supabase
+        const { error } = await supabase
           .from("user_roles")
-          .insert({ user_id: editingUser.id, role: role as any });
+          .insert({ user_id: editingUser.id, role });
+        if (error) throw error;
       }
 
       if (toAdd.length > 0 || toRemove.length > 0) {
@@ -187,6 +194,8 @@ const AdminUserManagement = ({ enabled }: Props) => {
       setSuperAdminWarning(false);
     } catch {
       toast.error(t("users.toasts.rolesUpdateFailed"));
+      // Some changes may have gone through before the failure; show what was actually saved.
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
     } finally {
       setSaving(false);
     }
@@ -216,7 +225,7 @@ const AdminUserManagement = ({ enabled }: Props) => {
           </SelectContent>
         </Select>
         {roleFilter !== "all" && (
-          <Button variant="ghost" size="sm" onClick={() => setRoleFilter("all")}>
+          <Button variant="ghost" size="sm" onClick={() => { setRoleFilter("all"); setPage(1); }}>
             {t("users.filter.clear")}
           </Button>
         )}

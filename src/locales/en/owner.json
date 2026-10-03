@@ -34,6 +34,7 @@
       "saveLocationFailed": "Failed to save location.",
       "updateFailed": "Failed to update property.",
       "createFailed": "Failed to create property.",
+      "imagesFailed": "Property saved, but its photos could not be saved. Edit it to add them again.",
       "updated": "Property updated!",
       "created": "Property created!"
     },

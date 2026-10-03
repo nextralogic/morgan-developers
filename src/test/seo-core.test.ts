@@ -190,4 +190,15 @@ describe("land unit converter", () => {
     expect(sqftToTerai(72900 + 3645 * 2 + 182.25 * 5)).toEqual({ bigha: 1, kattha: 2, dhur: 5 });
     expect(AREA_UNITS.bigha.toSqft / AREA_UNITS.ropani.toSqft).toBeCloseTo(13.31, 2);
   });
+
+  it("carries a rounded-up last unit into the next one", () => {
+    // 1360 sq ft is 3 aana, 3 paisa and 3.58 daam, which rounds to a whole aana more.
+    expect(sqftToNepali(1360)).toEqual({ ropani: 0, anna: 4, paisa: 0, dam: 0 });
+    expect(sqftToNepali(5475)).toEqual({ ropani: 1, anna: 0, paisa: 0, dam: 0 });
+    expect(sqftToTerai(3645 - 0.5)).toEqual({ bigha: 0, kattha: 1, dhur: 0 });
+    for (let sqft = 1; sqft <= 20000; sqft += 7) {
+      expect(sqftToNepali(sqft).dam).toBeLessThan(4);
+      expect(sqftToTerai(sqft).dhur).toBeLessThan(20);
+    }
+  });
 });

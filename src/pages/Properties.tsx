@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/Navbar";
@@ -14,13 +14,10 @@ import { SearchX, SlidersHorizontal } from "lucide-react";
 import PropertyPagination from "@/components/PropertyPagination";
 import { searchProperties, filtersFromParams, filtersToParams, type PropertySearchFilters } from "@/services/propertySearchService";
 import type { NepalAddress } from "@/utils/nepalAddress";
-import { useState } from "react";
 import { usePageMeta } from "@/lib/seo/usePageMeta";
 import { SITE_URL } from "@/lib/seo/constants";
 import { buildListingIndexMeta } from "@/lib/seo/core";
 import { useTranslation } from "react-i18next";
-
-const EMPTY_ADDRESS: NepalAddress = { province: "", district: "", municipality_or_city: "", ward: null, area_name: "" };
 
 const Properties = () => {
   const { t } = useTranslation(["properties", "common"]);

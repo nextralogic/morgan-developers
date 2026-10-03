@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { TablesInsert } from "@/integrations/supabase/types";
 import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -70,14 +71,14 @@ const PropertyForm = () => {
       setForm({
         title: existingProperty.title,
         price: String(existingProperty.price),
-        type: existingProperty.type as any,
-        status: existingProperty.status as any,
+        type: existingProperty.type,
+        status: existingProperty.status,
         description: existingProperty.description || "",
         area_value: existingProperty.area_value ? String(existingProperty.area_value) : (existingProperty.area_sqft ? String(existingProperty.area_sqft) : ""),
-        area_unit: ((existingProperty as any).area_unit || "sq_feet") as AreaUnit,
+        area_unit: (existingProperty.area_unit || "sq_feet") as AreaUnit,
       });
       setImages(
-        ((existingProperty.property_images as any[]) || []).map((img: any) => ({
+        (existingProperty.property_images ?? []).map((img) => ({
           image_url: img.image_url,
           is_primary: img.is_primary,
           id: img.id,
@@ -99,12 +100,16 @@ const PropertyForm = () => {
     }
   }, [existingProperty]);
 
-  // Access control
+  // Access control (waits for auth, so an admin's roles have loaded before deciding)
   useEffect(() => {
-    if (!authLoading && !user) navigate("/login");
+    if (authLoading) return;
+    if (!user) {
+      navigate("/login");
+      return;
+    }
     if (isEdit && existingProperty && !isAdmin) {
       // Non-admin: can only edit own draft properties
-      if (existingProperty.created_by !== user?.id) {
+      if (existingProperty.created_by !== user.id) {
         toast.error(t("propertyForm.toasts.onlyOwn", { ns: "owner" }));
         navigate("/my-properties");
       } else if (existingProperty.status !== "draft") {
@@ -148,11 +153,11 @@ const PropertyForm = () => {
     const areaValue = form.area_value ? Number(form.area_value) : null;
     const areaSqft = areaValue != null ? convertToSqft(areaValue, form.area_unit) : null;
 
-    const propertyData: Record<string, unknown> = {
+    const propertyData: TablesInsert<"properties"> = {
       title: form.title,
       price: Number(form.price) || 0,
-      type: form.type as any,
-      status: statusToSave as any,
+      type: form.type,
+      status: statusToSave,
       description: form.description || null,
       area_sqft: areaSqft,
       area_value: areaValue,
@@ -169,24 +174,30 @@ const PropertyForm = () => {
     let publicId = existingProperty?.property_public_id;
 
     if (isEdit) {
-      const { error } = await supabase.from("properties").update(propertyData as any).eq("id", id!);
+      const { error } = await supabase.from("properties").update(propertyData).eq("id", id!);
       if (error) { toast.error(t("propertyForm.toasts.updateFailed", { ns: "owner" })); setSaving(false); return; }
-      await supabase.from("property_images").delete().eq("property_id", id!);
     } else {
-      const { data, error } = await supabase.from("properties").insert(propertyData as any).select("id, property_public_id").single();
+      const { data, error } = await supabase.from("properties").insert(propertyData).select("id, property_public_id").single();
       if (error) { toast.error(t("propertyForm.toasts.createFailed", { ns: "owner" })); setSaving(false); return; }
       propertyId = data.id;
       publicId = data.property_public_id;
     }
 
-    if (images.length > 0 && propertyId) {
-      const imgRows = images.map((img, i) => ({
-        property_id: propertyId!,
-        image_url: img.image_url,
-        is_primary: img.is_primary,
-        display_order: i,
-      }));
-      await supabase.from("property_images").insert(imgRows);
+    // Save the new image rows before removing the old ones, so a failed save never leaves the listing without photos.
+    const imgRows = images.map((img, i) => ({
+      property_id: propertyId!,
+      image_url: img.image_url,
+      is_primary: img.is_primary,
+      display_order: i,
+    }));
+    const { data: savedImages, error: imagesError } = imgRows.length > 0
+      ? await supabase.from("property_images").insert(imgRows).select("id")
+      : { data: [], error: null };
+    if (isEdit && !imagesError) {
+      const keepIds = (savedImages ?? []).map((img) => img.id);
+      let staleImages = supabase.from("property_images").delete().eq("property_id", id!);
+      if (keepIds.length > 0) staleImages = staleImages.not("id", "in", `(${keepIds.join(",")})`);
+      await staleImages;
     }
 
     // Let search engines recrawl the listing when its public page changed. A new title also changes the URL.
@@ -199,7 +210,11 @@ const PropertyForm = () => {
     }
 
     setSaving(false);
-    toast.success(isEdit ? t("propertyForm.toasts.updated", { ns: "owner" }) : t("propertyForm.toasts.created", { ns: "owner" }));
+    if (imagesError) {
+      toast.error(t("propertyForm.toasts.imagesFailed", { ns: "owner" }));
+    } else {
+      toast.success(isEdit ? t("propertyForm.toasts.updated", { ns: "owner" }) : t("propertyForm.toasts.created", { ns: "owner" }));
+    }
     navigate("/my-properties");
   };
 
@@ -307,7 +322,7 @@ const PropertyForm = () => {
               <div className="grid gap-5 sm:grid-cols-2">
                 <div>
                   <Label>{t("propertyForm.fields.type", { ns: "owner" })}</Label>
-                  <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v as any })}>
+                  <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v as typeof form.type })}>
                     <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="land">{typeLabels.land}</SelectItem>
@@ -319,7 +334,7 @@ const PropertyForm = () => {
                 <div>
                   <Label>{t("propertyForm.fields.status", { ns: "owner" })}</Label>
                   {canEditStatus ? (
-                    <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as any })}>
+                    <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as typeof form.status })}>
                       <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="draft">{statusLabels.draft}</SelectItem>

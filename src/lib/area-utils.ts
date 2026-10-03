@@ -17,6 +17,9 @@ export const AREA_UNITS = {
 
 export type AreaUnit = keyof typeof AREA_UNITS;
 
+// Any i18next `t`, whatever namespaces it was created with. This file also runs in the
+// edge functions, so it does not import i18next types.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TranslateFn = (...args: any[]) => string;
 
 const UNIT_FALLBACK_LABELS: Record<AreaUnit, string> = {
@@ -45,29 +48,31 @@ export function convertToSqft(value: number, unit: AreaUnit): number | null {
 }
 
 /**
- * Convert sq.ft to Nepali land units (ropani-anna-paisa-dam).
+ * Convert sq.ft to Nepali land units (ropani-anna-paisa-dam). Rounds to whole
+ * dam first, so a dam that rounds up carries into the paisa, anna or ropani.
+ * 1 ropani = 16 anna = 64 paisa = 256 dam.
  */
 export function sqftToNepali(sqft: number) {
-  const ropani = Math.floor(sqft / 5476);
-  let remainder = sqft % 5476;
-  const anna = Math.floor(remainder / 342.25);
-  remainder = remainder % 342.25;
-  const paisa = Math.floor(remainder / 85.5625);
-  remainder = remainder % 85.5625;
-  const dam = Math.round(remainder / 21.390625);
-  return { ropani, anna, paisa, dam };
+  const dams = Math.round(sqft / AREA_UNITS.daam.toSqft);
+  return {
+    ropani: Math.floor(dams / 256),
+    anna: Math.floor(dams / 16) % 16,
+    paisa: Math.floor(dams / 4) % 4,
+    dam: dams % 4,
+  };
 }
 
 /**
- * Convert sq.ft to Terai land units (bigha-kattha-dhur).
+ * Convert sq.ft to Terai land units (bigha-kattha-dhur), with dhur to two
+ * decimals. 1 bigha = 20 kattha = 400 dhur.
  */
 export function sqftToTerai(sqft: number) {
-  const bigha = Math.floor(sqft / 72900);
-  let remainder = sqft % 72900;
-  const kattha = Math.floor(remainder / 3645);
-  remainder = remainder % 3645;
-  const dhur = Math.round((remainder / 182.25) * 100) / 100;
-  return { bigha, kattha, dhur };
+  const hundredthsOfDhur = Math.round((sqft / AREA_UNITS.dhur.toSqft) * 100);
+  return {
+    bigha: Math.floor(hundredthsOfDhur / 40_000),
+    kattha: Math.floor(hundredthsOfDhur / 2_000) % 20,
+    dhur: (hundredthsOfDhur % 2_000) / 100,
+  };
 }
 
 const HILL_UNITS: readonly string[] = ["ropani", "aana", "paisa", "daam"];
@@ -97,16 +102,6 @@ export function listingAreaSqft(
 /** Price of one `unit` of land, e.g. NPR per aana. */
 export function pricePerUnit(price: number, sqft: number, unit: AreaUnit): number {
   return (price / sqft) * AREA_UNITS[unit].toSqft;
-}
-
-export function formatNepaliArea(sqft: number): string {
-  const { ropani, anna, paisa, dam } = sqftToNepali(sqft);
-  const parts: string[] = [];
-  if (ropani > 0) parts.push(`${ropani} Ropani`);
-  if (anna > 0) parts.push(`${anna} Anna`);
-  if (paisa > 0) parts.push(`${paisa} Paisa`);
-  if (dam > 0) parts.push(`${dam} Dam`);
-  return parts.length > 0 ? parts.join(" ") : "0 Dam";
 }
 
 /**
@@ -151,10 +146,4 @@ export function formatAreaWithUnit(
     });
   }
   return `${Math.round(displaySqft).toLocaleString(locale)} sq.ft`;
-}
-
-/** Legacy helper – still used for filters/sorting display */
-export function formatArea(sqft: number): string {
-  const nepali = formatNepaliArea(sqft);
-  return `${nepali} (${sqft.toLocaleString()} sq.ft)`;
 }

@@ -83,7 +83,7 @@ export async function updatePropertyStatus(
 
   const { error } = await supabase
     .from("properties")
-    .update({ status: newStatus as any })
+    .update({ status: newStatus })
     .eq("id", propertyId);
   if (error) throw error;
 
@@ -110,7 +110,7 @@ export async function archiveProperty(propertyId: string) {
 
   const { error } = await supabase
     .from("properties")
-    .update({ is_deleted: true } as any)
+    .update({ is_deleted: true })
     .eq("id", propertyId);
   if (error) throw error;
 
@@ -129,7 +129,7 @@ export async function restoreProperty(propertyId: string) {
 
   const { error } = await supabase
     .from("properties")
-    .update({ is_deleted: false } as any)
+    .update({ is_deleted: false })
     .eq("id", propertyId);
   if (error) throw error;
 

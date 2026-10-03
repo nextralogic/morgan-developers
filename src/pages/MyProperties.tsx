@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { buildPropertyUrl } from "@/lib/property-url";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,8 +11,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Pencil, Building2, Trash2, Lock } from "lucide-react";
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -38,9 +37,7 @@ const MyProperties = () => {
   const queryClient = useQueryClient();
 
   const handleDelete = async (propertyId: string) => {
-    // Delete images first, then property
-    await supabase.from("property_amenities").delete().eq("property_id", propertyId);
-    await supabase.from("property_images").delete().eq("property_id", propertyId);
+    // Images, amenities and views are removed by ON DELETE CASCADE in the same statement.
     const { error } = await supabase.from("properties").delete().eq("id", propertyId);
     if (error) {
       toast.error(t("myProperties.toasts.deleteFailed", { ns: "owner" }));
@@ -117,12 +114,12 @@ const MyProperties = () => {
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {properties.map((p) => {
-                const primaryImg = (p.property_images as any[])?.find((img: any) => img.is_primary);
-                const firstImg = (p.property_images as any[])?.[0];
+                const primaryImg = p.property_images.find((img) => img.is_primary);
+                const firstImg = p.property_images[0];
                 const imgUrl = primaryImg?.image_url || firstImg?.image_url;
                 return (
                   <Card key={p.id} className="group overflow-hidden rounded-xl transition-shadow hover:shadow-lg">
-                    <Link to={buildPropertyUrl(p.title, (p as any).property_public_id)}>
+                    <Link to={buildPropertyUrl(p.title, p.property_public_id)}>
                       <div className="aspect-[4/3] overflow-hidden bg-muted">
                         {imgUrl ? (
                           <img src={imgUrl} alt={p.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
@@ -143,11 +140,11 @@ const MyProperties = () => {
                               {statusLabels[p.status] ?? p.status}
                             </Badge>
                           </div>
-                          <Link to={buildPropertyUrl(p.title, (p as any).property_public_id)}>
+                          <Link to={buildPropertyUrl(p.title, p.property_public_id)}>
                             <h3 className="font-heading font-semibold truncate hover:text-primary transition-colors">{p.title}</h3>
                           </Link>
-                          {(p.locations as any)?.name && (
-                            <p className="mt-0.5 text-xs text-muted-foreground">{(p.locations as any).name}</p>
+                          {p.locations?.name && (
+                            <p className="mt-0.5 text-xs text-muted-foreground">{p.locations.name}</p>
                           )}
                           <p className="mt-2 font-heading font-bold text-primary">
                             {t("currency.npr", { ns: "common", amount: Number(p.price).toLocaleString() })}

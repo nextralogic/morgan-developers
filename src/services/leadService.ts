@@ -1,5 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { TablesUpdate } from "@/integrations/supabase/types";
 import { logAction } from "@/services/auditService";
+import { ilikeAny } from "@/lib/postgrest";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -57,13 +59,12 @@ export async function fetchLeadsForAdmin(filters: AdminLeadFilters) {
     .range(from, to);
 
   if (filters.status) {
-    query = query.eq("status", filters.status as any);
+    query = query.eq("status", filters.status);
   }
 
   if (filters.query) {
-    const q = filters.query.trim();
-    // Search across name, email, phone using ilike on name (simplest)
-    query = query.or(`name.ilike.%${q}%,email.ilike.%${q}%,phone.ilike.%${q}%`);
+    // Search across name, email and phone
+    query = query.or(ilikeAny(["name", "email", "phone"], filters.query.trim()));
   }
 
   const { data, error, count } = await query;
@@ -94,13 +95,13 @@ export async function updateLeadStatus(
     .eq("id", leadId)
     .single();
 
-  const patch: Record<string, unknown> = { status };
+  const patch: TablesUpdate<"leads"> = { status };
   if (notes !== undefined) patch.notes = notes;
   if (handledBy !== undefined) patch.handled_by = handledBy;
 
   const { error } = await supabase
     .from("leads")
-    .update(patch as any)
+    .update(patch)
     .eq("id", leadId);
   if (error) throw error;
 
@@ -139,15 +140,12 @@ export async function createLead(payload: {
 
   if (error) throw error;
 
-  // Best-effort: fire notification edge function
-  try {
-    await supabase.functions.invoke("lead-notification", {
-      body: { lead_id: leadId },
-    });
-  } catch {
-    // Notification failure must not break lead creation
-    console.warn("Lead notification failed (non-critical)");
-  }
+  // Best-effort: fire notification edge function. invoke() reports failures in
+  // `error` rather than throwing, and they must not break lead creation.
+  const { error: notifyError } = await supabase.functions.invoke("lead-notification", {
+    body: { lead_id: leadId },
+  });
+  if (notifyError) console.warn("Lead notification failed (non-critical)", notifyError);
 
   return { id: leadId };
 }

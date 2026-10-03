@@ -38,10 +38,11 @@ const PROPERTY_DETAIL_SELECT =
 async function fetchPublishedProperty(slug: string) {
   const propertyPublicId = parsePropertyPublicId(slug);
   const query = supabase.from("properties").select(PROPERTY_DETAIL_SELECT);
-  const filtered = propertyPublicId
-    ? query.eq("property_public_id", propertyPublicId)
-    : isUUID(slug)
-      ? query.eq("id", slug)
+  // Old links use the UUID, whose last group can be all digits, so it is checked first.
+  const filtered = isUUID(slug)
+    ? query.eq("id", slug)
+    : propertyPublicId
+      ? query.eq("property_public_id", propertyPublicId)
       : null;
   if (!filtered) throw new Error("Invalid property URL");
 
@@ -62,9 +63,6 @@ const PropertyDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
 
-  const propertyPublicId = slug ? parsePropertyPublicId(slug) : null;
-  const isOldUUID = slug ? isUUID(slug) : false;
-
   const { data: property, isLoading } = useQuery({
     queryKey: ["property", slug],
     queryFn: () => fetchPublishedProperty(slug!),
@@ -75,22 +73,12 @@ const PropertyDetail = () => {
     retry: false,
   });
 
+  // Send old UUID links and outdated title slugs to the canonical URL.
   useEffect(() => {
-    if (property && isOldUUID) {
-      const canonical = buildPropertyUrl(property.title, (property as any).property_public_id);
-      navigate(canonical, { replace: true });
-    }
-  }, [property, isOldUUID, navigate]);
-
-  useEffect(() => {
-    if (property && propertyPublicId && slug) {
-      const canonical = buildPropertyUrl(property.title, (property as any).property_public_id);
-      const expectedSlug = canonical.replace("/properties/", "");
-      if (slug !== expectedSlug) {
-        navigate(canonical, { replace: true });
-      }
-    }
-  }, [property, propertyPublicId, slug, navigate]);
+    if (!property || !slug) return;
+    const canonical = buildPropertyUrl(property.title, property.property_public_id);
+    if (`/properties/${slug}` !== canonical) navigate(canonical, { replace: true });
+  }, [property, slug, navigate]);
 
   const { data: amenities } = useQuery({
     queryKey: ["property-amenities", property?.id],
@@ -105,7 +93,7 @@ const PropertyDetail = () => {
     enabled: !!property?.id,
   });
 
-  const relatedDistrict = (property?.locations as { district?: string | null } | null)?.district ?? null;
+  const relatedDistrict = property?.locations?.district ?? null;
   const { data: related } = useQuery({
     queryKey: ["related-properties", property?.id],
     queryFn: () => getRelatedProperties(property!.id, relatedDistrict, property!.type),
@@ -114,7 +102,7 @@ const PropertyDetail = () => {
   });
 
   const locationPath = useMemo(() => {
-    const loc = property?.locations as any;
+    const loc = property?.locations;
     if (!loc) return [];
     const parts: { id: string; name: string }[] = [];
     if (loc.area_name) parts.push({ id: "area", name: loc.area_name });
@@ -126,9 +114,9 @@ const PropertyDetail = () => {
   }, [property, t]);
 
   // --- SEO: must be called unconditionally (before early returns) ---
-  const images = property ? ((property.property_images as any[]) || []) : [];
-  const location = property ? (property.locations as any) : null;
-  const orderedImageUrls = [...(images as { image_url: string; is_primary: boolean; display_order: number | null }[])]
+  const images = property?.property_images ?? [];
+  const location = property?.locations ?? null;
+  const orderedImageUrls = [...images]
     .sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || (a.display_order ?? 0) - (b.display_order ?? 0))
     .map((img) => img.image_url);
 
@@ -140,9 +128,9 @@ const PropertyDetail = () => {
         type: property.type,
         status: property.status,
         areaSqft: property.area_sqft ? Number(property.area_sqft) : null,
-        areaValue: (property as any).area_value ? Number((property as any).area_value) : null,
-        areaUnit: (property as any).area_unit,
-        propertyPublicId: (property as any).property_public_id,
+        areaValue: property.area_value ? Number(property.area_value) : null,
+        areaUnit: property.area_unit,
+        propertyPublicId: property.property_public_id,
         createdAt: property.created_at,
         updatedAt: property.updated_at,
         imageUrls: orderedImageUrls,
@@ -206,10 +194,7 @@ const PropertyDetail = () => {
     draft: t("property.statuses.draft", { ns: "common" }),
   };
 
-  const { area_value: areaValue, area_unit: areaUnit = null } = property as {
-    area_value?: number | null;
-    area_unit?: string | null;
-  };
+  const { area_value: areaValue, area_unit: areaUnit } = property;
   const areaSqft = listingAreaSqft(
     property.area_sqft ? Number(property.area_sqft) : null,
     areaValue ? Number(areaValue) : null,
@@ -256,7 +241,7 @@ const PropertyDetail = () => {
                   {statusLabels[property.status] ?? property.status}
                 </Badge>
                 <Badge variant="outline" className="text-xs text-muted-foreground">
-                  {t("labels.id", { ns: "propertyDetail" })}: {(property as any).property_public_id}
+                  {t("labels.id", { ns: "propertyDetail" })}: {property.property_public_id}
                 </Badge>
               </div>
               <h1 className="mt-3 font-heading text-2xl font-bold md:text-3xl">{property.title}</h1>
@@ -292,13 +277,13 @@ const PropertyDetail = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
-              {(property.area_sqft || (property as any).area_value) && (
+              {(property.area_sqft || property.area_value) && (
                 <div className="rounded-xl border bg-card p-4 text-center sm:p-5">
                   <Ruler className="mx-auto h-5 w-5 text-primary" />
                   <p className="mt-2 text-xs font-semibold sm:text-sm">
                     {formatAreaWithUnit(
-                      (property as any).area_value,
-                      (property as any).area_unit,
+                      property.area_value,
+                      property.area_unit,
                       property.area_sqft ? Number(property.area_sqft) : null,
                       {
                         t,
@@ -336,7 +321,7 @@ const PropertyDetail = () => {
               <div>
                 <h2 className="font-heading text-xl font-semibold">{t("labels.amenities", { ns: "propertyDetail" })}</h2>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {amenities.map((pa: any) => (
+                  {amenities.map((pa) => (
                     <Badge key={pa.amenity_id} variant="outline" className="gap-1.5 rounded-full px-3.5 py-1.5 text-sm">
                       {pa.amenities?.icon && <span>{pa.amenities.icon}</span>}
                       {pa.amenities?.name}

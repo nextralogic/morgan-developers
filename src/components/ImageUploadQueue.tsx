@@ -253,7 +253,7 @@ const ImageUploadQueue = ({ userId, images, onImagesChange }: ImageUploadQueuePr
       <div className="flex flex-wrap gap-3">
         {/* Existing uploaded images */}
         {images.map((img, i) => (
-          <div key={i} className="group relative h-24 w-24 overflow-hidden rounded-lg border">
+          <div key={img.image_url} className="group relative h-24 w-24 overflow-hidden rounded-lg border">
             <button
               type="button"
               onClick={() => setPreviewImage({ url: img.image_url })}

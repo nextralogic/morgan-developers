@@ -50,8 +50,10 @@ const ShareButtons = ({ title, url }: ShareButtonsProps) => {
   ];
 
   const copyLink = () => {
-    navigator.clipboard.writeText(shareUrl);
-    toast.success(t("share.linkCopied"));
+    navigator.clipboard.writeText(shareUrl).then(
+      () => toast.success(t("share.linkCopied")),
+      () => toast.error(t("share.copyFailed"))
+    );
   };
 
   return (
@@ -67,8 +69,10 @@ const ShareButtons = ({ title, url }: ShareButtonsProps) => {
           className={`h-9 w-9 rounded-full ${link.color}`}
           title={t("share.shareOn", { platform: link.label })}
           onClick={() => {
-            const w = window.open(link.href, "shareWindow", "width=600,height=500,noopener,noreferrer");
-            if (!w) toast.error(t("share.allowPopup"));
+            // With "noopener" window.open always returns null, so the opener link is cut by hand instead.
+            const w = window.open(link.href, "shareWindow", "width=600,height=500");
+            if (w) w.opener = null;
+            else toast.error(t("share.allowPopup"));
           }}
         >
           <link.icon />

@@ -55,7 +55,7 @@ export async function upsertLocation(addr: NepalAddress): Promise<string> {
       area_name: addr.area_name?.trim() || null,
       display_name,
       search_key,
-    } as any)
+    })
     .select("id")
     .single();
 

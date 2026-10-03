@@ -1,226 +1,96 @@
 -- =============================================================
 -- FULL SCHEMA SNAPSHOT — Morgan Developers Real Estate Platform
 -- =============================================================
--- This migration reproduces the entire public schema from scratch.
+-- Generated from the live Supabase project by supabase/schema-snapshot.sh.
+-- Do not edit by hand: change the database through a migration in
+-- supabase/migrations, then run `npm run db:snapshot` and commit the result.
 --
--- USAGE (fresh Supabase project):
---   1. Copy this file to supabase/migrations/00000000000000_full_schema_snapshot.sql
---   2. Remove all other migration files from supabase/migrations/
---   3. Run: supabase db push
---
--- Alternatively, run directly via psql or the SQL Editor.
+-- It recreates everything the app needs on a new, empty Supabase project:
+--   * the public schema: types, tables, constraints, indexes, functions,
+--     triggers, row level security, policies and grants
+--   * the trigger on auth.users that creates a profile for each new user
+--   * the property-images Storage bucket and its access policies
+--   * event triggers that call public functions
+-- It holds no data. Run it once on the empty project, in the SQL Editor or with
+--   psql "<connection string>" -f supabase/schema_snapshot.sql
 -- =============================================================
 
--- ─────────────────────────────────────────────────────────────
--- 1. ENUM TYPES
--- ─────────────────────────────────────────────────────────────
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
 
-CREATE TYPE public.app_role AS ENUM ('super_admin', 'admin', 'moderator', 'buyer');
-CREATE TYPE public.property_status AS ENUM ('draft', 'published', 'sold');
-CREATE TYPE public.property_type AS ENUM ('apartment', 'house', 'land');
-CREATE TYPE public.lead_source AS ENUM ('website', 'referral');
-CREATE TYPE public.lead_status AS ENUM ('new', 'in_progress', 'contacted', 'closed', 'archived');
+CREATE SCHEMA IF NOT EXISTS "public";
 
--- ─────────────────────────────────────────────────────────────
--- 2. SEQUENCES
--- ─────────────────────────────────────────────────────────────
+ALTER SCHEMA "public" OWNER TO "pg_database_owner";
 
-CREATE SEQUENCE IF NOT EXISTS public.property_public_id_seq
-  START WITH 1001
-  INCREMENT BY 1
-  NO MINVALUE
-  NO MAXVALUE
-  CACHE 1;
+COMMENT ON SCHEMA "public" IS 'standard public schema';
 
--- ─────────────────────────────────────────────────────────────
--- 3. TABLES
--- ─────────────────────────────────────────────────────────────
-
--- profiles
-CREATE TABLE public.profiles (
-  id uuid NOT NULL PRIMARY KEY,
-  full_name text,
-  phone text,
-  avatar_url text,
-  created_at timestamptz NOT NULL DEFAULT now()
+CREATE TYPE "public"."app_role" AS ENUM (
+    'super_admin',
+    'admin',
+    'moderator',
+    'buyer'
 );
 
--- user_roles
-CREATE TABLE public.user_roles (
-  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id uuid NOT NULL,
-  role public.app_role NOT NULL,
-  UNIQUE (user_id, role)
+ALTER TYPE "public"."app_role" OWNER TO "postgres";
+
+CREATE TYPE "public"."lead_source" AS ENUM (
+    'website',
+    'referral'
 );
 
--- locations
-CREATE TABLE public.locations (
-  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  name text NOT NULL,
-  parent_id uuid REFERENCES public.locations(id),
-  province text,
-  district text,
-  municipality_or_city text,
-  ward integer,
-  area_name text,
-  display_name text,
-  search_key text
+ALTER TYPE "public"."lead_source" OWNER TO "postgres";
+
+CREATE TYPE "public"."lead_status" AS ENUM (
+    'new',
+    'in_progress',
+    'contacted',
+    'closed',
+    'archived'
 );
 
--- properties
-CREATE TABLE public.properties (
-  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  title text NOT NULL,
-  description text,
-  price numeric NOT NULL DEFAULT 0,
-  type public.property_type NOT NULL DEFAULT 'house',
-  status public.property_status NOT NULL DEFAULT 'draft',
-  location_id uuid REFERENCES public.locations(id),
-  created_by uuid,
-  area_sqft numeric,
-  area_unit text DEFAULT 'sq_feet',
-  area_value numeric,
-  is_deleted boolean NOT NULL DEFAULT false,
-  view_count bigint NOT NULL DEFAULT 0,
-  property_public_id integer NOT NULL DEFAULT nextval('public.property_public_id_seq') UNIQUE,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
+ALTER TYPE "public"."lead_status" OWNER TO "postgres";
+
+CREATE TYPE "public"."property_status" AS ENUM (
+    'draft',
+    'published',
+    'sold'
 );
 
--- property_images
-CREATE TABLE public.property_images (
-  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  property_id uuid NOT NULL REFERENCES public.properties(id),
-  image_url text NOT NULL,
-  is_primary boolean NOT NULL DEFAULT false,
-  display_order integer NOT NULL DEFAULT 0
+ALTER TYPE "public"."property_status" OWNER TO "postgres";
+
+CREATE TYPE "public"."property_type" AS ENUM (
+    'apartment',
+    'house',
+    'land'
 );
 
--- amenities
-CREATE TABLE public.amenities (
-  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  name text NOT NULL,
-  icon text
-);
+ALTER TYPE "public"."property_type" OWNER TO "postgres";
 
--- property_amenities (junction)
-CREATE TABLE public.property_amenities (
-  property_id uuid NOT NULL REFERENCES public.properties(id),
-  amenity_id uuid NOT NULL REFERENCES public.amenities(id),
-  PRIMARY KEY (property_id, amenity_id)
-);
+CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+  INSERT INTO public.profiles (id, full_name)
+  VALUES (NEW.id, NEW.raw_user_meta_data ->> 'full_name');
+  RETURN NEW;
+END;
+$$;
 
--- leads
-CREATE TABLE public.leads (
-  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  name text NOT NULL,
-  email text NOT NULL,
-  phone text,
-  message text,
-  property_id uuid REFERENCES public.properties(id),
-  budget_range text,
-  preferred_contact_time text,
-  source public.lead_source NOT NULL DEFAULT 'website',
-  status public.lead_status NOT NULL DEFAULT 'new',
-  notes text,
-  handled_by uuid,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
+ALTER FUNCTION "public"."handle_new_user"() OWNER TO "postgres";
 
--- property_views
-CREATE TABLE public.property_views (
-  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  property_id uuid NOT NULL REFERENCES public.properties(id),
-  session_id text,
-  user_id uuid,
-  user_agent text,
-  ip_hash text,
-  viewed_at timestamptz NOT NULL DEFAULT now()
-);
-
--- audit_logs
-CREATE TABLE public.audit_logs (
-  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  entity_type text NOT NULL,
-  entity_id uuid NOT NULL,
-  action text NOT NULL,
-  performed_by uuid NOT NULL REFERENCES public.profiles(id),
-  performed_at timestamptz NOT NULL DEFAULT now(),
-  metadata jsonb
-);
-
--- ─────────────────────────────────────────────────────────────
--- 4. INDEXES
--- ─────────────────────────────────────────────────────────────
-
--- audit_logs
-CREATE INDEX idx_audit_logs_entity ON public.audit_logs USING btree (entity_type, entity_id);
-CREATE INDEX idx_audit_logs_performed_at ON public.audit_logs USING btree (performed_at DESC);
-CREATE INDEX idx_audit_logs_performed_by ON public.audit_logs USING btree (performed_by);
-
--- leads
-CREATE INDEX idx_leads_created_at ON public.leads USING btree (created_at DESC);
-CREATE INDEX idx_leads_property_id ON public.leads USING btree (property_id);
-CREATE INDEX idx_leads_status_created ON public.leads USING btree (status, created_at DESC);
-
--- locations
-CREATE INDEX idx_locations_address ON public.locations USING btree (province, district, municipality_or_city);
-CREATE INDEX idx_locations_display_name ON public.locations USING btree (display_name);
-CREATE INDEX idx_locations_district ON public.locations USING btree (district);
-CREATE INDEX idx_locations_municipality ON public.locations USING btree (municipality_or_city);
-CREATE INDEX idx_locations_parent_id ON public.locations USING btree (parent_id);
-CREATE INDEX idx_locations_province ON public.locations USING btree (province);
-CREATE INDEX idx_locations_search_key ON public.locations USING btree (search_key);
-CREATE UNIQUE INDEX locations_address_unique ON public.locations USING btree (
-  COALESCE(province, ''),
-  COALESCE(district, ''),
-  COALESCE(municipality_or_city, ''),
-  COALESCE(ward, 0),
-  COALESCE(area_name, '')
-);
-
--- properties
-CREATE INDEX idx_properties_created_at ON public.properties USING btree (created_at DESC);
-CREATE INDEX idx_properties_created_by ON public.properties USING btree (created_by);
-CREATE INDEX idx_properties_location_id ON public.properties USING btree (location_id);
-CREATE INDEX idx_properties_price ON public.properties USING btree (price);
-CREATE INDEX idx_properties_property_public_id ON public.properties USING btree (property_public_id);
-CREATE INDEX idx_properties_status ON public.properties USING btree (status);
-CREATE INDEX idx_properties_status_area ON public.properties USING btree (status, area_sqft);
-CREATE INDEX idx_properties_status_created ON public.properties USING btree (status, created_at DESC);
-CREATE INDEX idx_properties_status_location ON public.properties USING btree (status, location_id, created_at DESC);
-CREATE INDEX idx_properties_status_not_deleted ON public.properties USING btree (status, is_deleted) WHERE (is_deleted = false);
-CREATE INDEX idx_properties_status_price ON public.properties USING btree (status, price);
-CREATE INDEX idx_properties_status_type ON public.properties USING btree (status, type);
-CREATE INDEX idx_properties_type ON public.properties USING btree (type);
-CREATE INDEX idx_properties_view_count ON public.properties USING btree (view_count DESC);
-
--- property_amenities
-CREATE INDEX idx_property_amenities_property_id ON public.property_amenities USING btree (property_id);
-
--- property_images
-CREATE INDEX idx_property_images_property_id ON public.property_images USING btree (property_id);
-
--- property_views
-CREATE INDEX idx_property_views_property_id ON public.property_views USING btree (property_id);
-CREATE INDEX idx_property_views_property_viewed ON public.property_views USING btree (property_id, viewed_at DESC);
-
--- user_roles
-CREATE INDEX idx_user_roles_user_id ON public.user_roles USING btree (user_id);
-
--- ─────────────────────────────────────────────────────────────
--- 5. FUNCTIONS
--- ─────────────────────────────────────────────────────────────
-
--- Hierarchical role check (super_admin ⊇ admin ⊇ moderator ⊇ buyer)
-CREATE OR REPLACE FUNCTION public.has_role(_user_id uuid, _role public.app_role)
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $$
+CREATE OR REPLACE FUNCTION "public"."has_role"("_user_id" "uuid", "_role" "public"."app_role") RETURNS boolean
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.user_roles
     WHERE user_id = _user_id
@@ -233,38 +103,88 @@ AS $$
   )
 $$;
 
--- Auto-create profile on signup
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $$
+ALTER FUNCTION "public"."has_role"("_user_id" "uuid", "_role" "public"."app_role") OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."log_property_view"("_property_id" "uuid", "_session_id" "text" DEFAULT NULL::"text", "_user_id" "uuid" DEFAULT NULL::"uuid", "_user_agent" "text" DEFAULT NULL::"text") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
 BEGIN
-  INSERT INTO public.profiles (id, full_name)
-  VALUES (NEW.id, NEW.raw_user_meta_data ->> 'full_name');
+  -- Insert the view record
+  INSERT INTO public.property_views (property_id, session_id, user_id, user_agent)
+  VALUES (_property_id, _session_id, _user_id, _user_agent);
+
+  -- Increment the cached count on properties
+  UPDATE public.properties
+  SET view_count = view_count + 1
+  WHERE id = _property_id;
+END;
+$$;
+
+ALTER FUNCTION "public"."log_property_view"("_property_id" "uuid", "_session_id" "text", "_user_id" "uuid", "_user_agent" "text") OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."rls_auto_enable"() RETURNS "event_trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog'
+    AS $$
+DECLARE
+  cmd record;
+BEGIN
+  FOR cmd IN
+    SELECT *
+    FROM pg_event_trigger_ddl_commands()
+    WHERE command_tag IN ('CREATE TABLE', 'CREATE TABLE AS', 'SELECT INTO')
+      AND object_type IN ('table','partitioned table')
+  LOOP
+     IF cmd.schema_name IS NOT NULL AND cmd.schema_name IN ('public') AND cmd.schema_name NOT IN ('pg_catalog','information_schema') AND cmd.schema_name NOT LIKE 'pg_toast%' AND cmd.schema_name NOT LIKE 'pg_temp%' THEN
+      BEGIN
+        EXECUTE format('alter table if exists %s enable row level security', cmd.object_identity);
+        RAISE LOG 'rls_auto_enable: enabled RLS on %', cmd.object_identity;
+      EXCEPTION
+        WHEN OTHERS THEN
+          RAISE LOG 'rls_auto_enable: failed to enable RLS on %', cmd.object_identity;
+      END;
+     ELSE
+        RAISE LOG 'rls_auto_enable: skip % (either system schema or not in enforced list: %.)', cmd.object_identity, cmd.schema_name;
+     END IF;
+  END LOOP;
+END;
+$$;
+
+ALTER FUNCTION "public"."rls_auto_enable"() OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."update_properties_updated_at"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+  IF (to_jsonb(NEW) - 'view_count' - 'updated_at') = (to_jsonb(OLD) - 'view_count' - 'updated_at') THEN
+    NEW.updated_at = OLD.updated_at;
+  ELSE
+    NEW.updated_at = now();
+  END IF;
   RETURN NEW;
 END;
 $$;
 
--- Generic updated_at trigger function
-CREATE OR REPLACE FUNCTION public.update_updated_at_column()
-RETURNS trigger
-LANGUAGE plpgsql
-SET search_path TO 'public'
-AS $$
+ALTER FUNCTION "public"."update_properties_updated_at"() OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."update_updated_at_column"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'public'
+    AS $$
 BEGIN
   NEW.updated_at = now();
   RETURN NEW;
 END;
 $$;
 
--- Area validation trigger function
-CREATE OR REPLACE FUNCTION public.validate_area_values()
-RETURNS trigger
-LANGUAGE plpgsql
-SET search_path TO 'public'
-AS $$
+ALTER FUNCTION "public"."update_updated_at_column"() OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."validate_area_values"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'public'
+    AS $$
 BEGIN
   IF NEW.area_value IS NOT NULL AND NEW.area_value < 0 THEN
     RAISE EXCEPTION 'area_value must be >= 0';
@@ -276,296 +196,517 @@ BEGIN
 END;
 $$;
 
--- Log a property view (security definer to bypass RLS)
-CREATE OR REPLACE FUNCTION public.log_property_view(
-  _property_id uuid,
-  _session_id text DEFAULT NULL,
-  _user_id uuid DEFAULT NULL,
-  _user_agent text DEFAULT NULL
-)
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $$
-BEGIN
-  INSERT INTO public.property_views (property_id, session_id, user_id, user_agent)
-  VALUES (_property_id, _session_id, _user_id, _user_agent);
+ALTER FUNCTION "public"."validate_area_values"() OWNER TO "postgres";
 
-  UPDATE public.properties
-  SET view_count = view_count + 1
-  WHERE id = _property_id;
-END;
-$$;
+SET default_tablespace = '';
 
--- ─────────────────────────────────────────────────────────────
--- 6. TRIGGERS
--- ─────────────────────────────────────────────────────────────
+SET default_table_access_method = "heap";
 
--- Auto-create profile on auth.users INSERT
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW
-  EXECUTE FUNCTION public.handle_new_user();
+CREATE TABLE IF NOT EXISTS "public"."amenities" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "name" "text" NOT NULL,
+    "icon" "text"
+);
 
--- Auto-update updated_at on properties
-CREATE TRIGGER update_properties_updated_at
-  BEFORE UPDATE ON public.properties
-  FOR EACH ROW
-  EXECUTE FUNCTION public.update_updated_at_column();
+ALTER TABLE "public"."amenities" OWNER TO "postgres";
 
--- Validate area values on properties
-CREATE TRIGGER validate_property_area
-  BEFORE INSERT OR UPDATE ON public.properties
-  FOR EACH ROW
-  EXECUTE FUNCTION public.validate_area_values();
+CREATE TABLE IF NOT EXISTS "public"."audit_logs" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "entity_type" "text" NOT NULL,
+    "entity_id" "uuid" NOT NULL,
+    "action" "text" NOT NULL,
+    "performed_by" "uuid" NOT NULL,
+    "performed_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "metadata" "jsonb"
+);
 
--- Auto-update updated_at on leads
-CREATE TRIGGER update_leads_updated_at
-  BEFORE UPDATE ON public.leads
-  FOR EACH ROW
-  EXECUTE FUNCTION public.update_updated_at_column();
+ALTER TABLE "public"."audit_logs" OWNER TO "postgres";
 
--- ─────────────────────────────────────────────────────────────
--- 7. ROW LEVEL SECURITY
--- ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS "public"."leads" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "name" "text" NOT NULL,
+    "email" "text" NOT NULL,
+    "phone" "text",
+    "message" "text",
+    "property_id" "uuid",
+    "budget_range" "text",
+    "preferred_contact_time" "text",
+    "source" "public"."lead_source" DEFAULT 'website'::"public"."lead_source" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "status" "public"."lead_status" DEFAULT 'new'::"public"."lead_status" NOT NULL,
+    "notes" "text",
+    "handled_by" "uuid",
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
 
--- === profiles ===
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."leads" OWNER TO "postgres";
 
-CREATE POLICY "Users can view own profile"
-  ON public.profiles FOR SELECT
-  USING (auth.uid() = id);
+CREATE TABLE IF NOT EXISTS "public"."locations" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "name" "text" NOT NULL,
+    "parent_id" "uuid",
+    "province" "text",
+    "district" "text",
+    "municipality_or_city" "text",
+    "ward" integer,
+    "area_name" "text",
+    "display_name" "text",
+    "search_key" "text"
+);
 
-CREATE POLICY "Users can update own profile"
-  ON public.profiles FOR UPDATE
-  USING (auth.uid() = id);
+ALTER TABLE "public"."locations" OWNER TO "postgres";
 
-CREATE POLICY "Users can insert own profile"
-  ON public.profiles FOR INSERT
-  WITH CHECK (auth.uid() = id);
+CREATE TABLE IF NOT EXISTS "public"."profiles" (
+    "id" "uuid" NOT NULL,
+    "full_name" "text",
+    "phone" "text",
+    "avatar_url" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
 
-CREATE POLICY "Admins can view all profiles"
-  ON public.profiles FOR SELECT
-  USING (has_role(auth.uid(), 'moderator'));
+ALTER TABLE "public"."profiles" OWNER TO "postgres";
 
--- === user_roles ===
-ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+CREATE SEQUENCE IF NOT EXISTS "public"."property_public_id_seq"
+    START WITH 1001
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
-CREATE POLICY "Users can view own roles"
-  ON public.user_roles FOR SELECT
-  USING (auth.uid() = user_id);
+ALTER SEQUENCE "public"."property_public_id_seq" OWNER TO "postgres";
 
-CREATE POLICY "Super admins can manage roles"
-  ON public.user_roles FOR ALL
-  USING (has_role(auth.uid(), 'super_admin'))
-  WITH CHECK (has_role(auth.uid(), 'super_admin'));
+CREATE TABLE IF NOT EXISTS "public"."properties" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "title" "text" NOT NULL,
+    "price" numeric DEFAULT 0 NOT NULL,
+    "location_id" "uuid",
+    "type" "public"."property_type" DEFAULT 'house'::"public"."property_type" NOT NULL,
+    "status" "public"."property_status" DEFAULT 'draft'::"public"."property_status" NOT NULL,
+    "description" "text",
+    "area_sqft" numeric,
+    "created_by" "uuid",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "property_public_id" integer DEFAULT "nextval"('"public"."property_public_id_seq"'::"regclass") NOT NULL,
+    "area_unit" "text" DEFAULT 'sq_feet'::"text",
+    "area_value" numeric,
+    "view_count" bigint DEFAULT 0 NOT NULL,
+    "is_deleted" boolean DEFAULT false NOT NULL,
+    CONSTRAINT "chk_properties_area_positive" CHECK ((("area_sqft" IS NULL) OR ("area_sqft" > (0)::numeric))),
+    CONSTRAINT "chk_properties_price_non_negative" CHECK (("price" >= (0)::numeric))
+);
 
--- === properties ===
-ALTER TABLE public.properties ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."properties" OWNER TO "postgres";
 
-CREATE POLICY "Public can view published properties"
-  ON public.properties FOR SELECT
-  USING (status = 'published' AND is_deleted = false);
+CREATE TABLE IF NOT EXISTS "public"."property_amenities" (
+    "property_id" "uuid" NOT NULL,
+    "amenity_id" "uuid" NOT NULL
+);
 
-CREATE POLICY "Users can view own properties"
-  ON public.properties FOR SELECT
-  USING (auth.uid() = created_by AND is_deleted = false);
+ALTER TABLE "public"."property_amenities" OWNER TO "postgres";
 
-CREATE POLICY "Users can create own draft properties"
-  ON public.properties FOR INSERT
-  WITH CHECK (auth.uid() = created_by AND status = 'draft');
+CREATE TABLE IF NOT EXISTS "public"."property_images" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "property_id" "uuid" NOT NULL,
+    "image_url" "text" NOT NULL,
+    "display_order" integer DEFAULT 0 NOT NULL,
+    "is_primary" boolean DEFAULT false NOT NULL,
+    CONSTRAINT "chk_images_display_order_non_negative" CHECK (("display_order" >= 0))
+);
 
-CREATE POLICY "Users can update own draft properties"
-  ON public.properties FOR UPDATE
-  USING (auth.uid() = created_by AND status = 'draft' AND is_deleted = false)
-  WITH CHECK (auth.uid() = created_by AND status = 'draft' AND is_deleted = false);
+ALTER TABLE "public"."property_images" OWNER TO "postgres";
 
-CREATE POLICY "Users can delete own properties"
-  ON public.properties FOR DELETE
-  USING (auth.uid() = created_by AND is_deleted = false);
+CREATE TABLE IF NOT EXISTS "public"."property_views" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "property_id" "uuid" NOT NULL,
+    "viewed_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "session_id" "text",
+    "user_id" "uuid",
+    "user_agent" "text",
+    "ip_hash" "text"
+);
 
-CREATE POLICY "Moderators can view all properties"
-  ON public.properties FOR SELECT
-  USING (has_role(auth.uid(), 'moderator'));
+ALTER TABLE "public"."property_views" OWNER TO "postgres";
 
-CREATE POLICY "Moderators can update properties"
-  ON public.properties FOR UPDATE
-  USING (has_role(auth.uid(), 'moderator'))
-  WITH CHECK (has_role(auth.uid(), 'moderator'));
+CREATE TABLE IF NOT EXISTS "public"."user_roles" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "role" "public"."app_role" NOT NULL
+);
 
-CREATE POLICY "Admins can do everything with properties"
-  ON public.properties FOR ALL
-  USING (has_role(auth.uid(), 'admin'));
+ALTER TABLE "public"."user_roles" OWNER TO "postgres";
 
--- === property_images ===
-ALTER TABLE public.property_images ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ONLY "public"."amenities"
+    ADD CONSTRAINT "amenities_pkey" PRIMARY KEY ("id");
 
-CREATE POLICY "Public can view property images"
-  ON public.property_images FOR SELECT
-  USING (true);
+ALTER TABLE ONLY "public"."audit_logs"
+    ADD CONSTRAINT "audit_logs_pkey" PRIMARY KEY ("id");
 
-CREATE POLICY "Admins can manage property images"
-  ON public.property_images FOR ALL
-  USING (has_role(auth.uid(), 'admin'));
+ALTER TABLE ONLY "public"."leads"
+    ADD CONSTRAINT "leads_pkey" PRIMARY KEY ("id");
 
-CREATE POLICY "Users can insert own property images"
-  ON public.property_images FOR INSERT
-  WITH CHECK (EXISTS (
-    SELECT 1 FROM public.properties
-    WHERE properties.id = property_images.property_id
-      AND properties.created_by = auth.uid()
-  ));
+ALTER TABLE ONLY "public"."locations"
+    ADD CONSTRAINT "locations_pkey" PRIMARY KEY ("id");
 
-CREATE POLICY "Users can update own property images"
-  ON public.property_images FOR UPDATE
-  USING (EXISTS (
-    SELECT 1 FROM public.properties
-    WHERE properties.id = property_images.property_id
-      AND properties.created_by = auth.uid()
-  ));
+ALTER TABLE ONLY "public"."profiles"
+    ADD CONSTRAINT "profiles_pkey" PRIMARY KEY ("id");
 
-CREATE POLICY "Users can delete own property images"
-  ON public.property_images FOR DELETE
-  USING (EXISTS (
-    SELECT 1 FROM public.properties
-    WHERE properties.id = property_images.property_id
-      AND properties.created_by = auth.uid()
-  ));
+ALTER TABLE ONLY "public"."properties"
+    ADD CONSTRAINT "properties_pkey" PRIMARY KEY ("id");
 
--- === amenities ===
-ALTER TABLE public.amenities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ONLY "public"."properties"
+    ADD CONSTRAINT "properties_property_public_id_key" UNIQUE ("property_public_id");
 
-CREATE POLICY "Amenities are publicly readable"
-  ON public.amenities FOR SELECT
-  USING (true);
+ALTER TABLE ONLY "public"."property_amenities"
+    ADD CONSTRAINT "property_amenities_pkey" PRIMARY KEY ("property_id", "amenity_id");
 
-CREATE POLICY "Admins can manage amenities"
-  ON public.amenities FOR ALL
-  USING (has_role(auth.uid(), 'admin'));
+ALTER TABLE ONLY "public"."property_images"
+    ADD CONSTRAINT "property_images_pkey" PRIMARY KEY ("id");
 
--- === property_amenities ===
-ALTER TABLE public.property_amenities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ONLY "public"."property_views"
+    ADD CONSTRAINT "property_views_pkey" PRIMARY KEY ("id");
 
-CREATE POLICY "Property amenities are publicly readable"
-  ON public.property_amenities FOR SELECT
-  USING (true);
+ALTER TABLE ONLY "public"."user_roles"
+    ADD CONSTRAINT "user_roles_pkey" PRIMARY KEY ("id");
 
-CREATE POLICY "Admins can manage property amenities"
-  ON public.property_amenities FOR ALL
-  USING (has_role(auth.uid(), 'admin'));
+ALTER TABLE ONLY "public"."user_roles"
+    ADD CONSTRAINT "user_roles_user_id_role_key" UNIQUE ("user_id", "role");
 
-CREATE POLICY "Users can insert own property amenities"
-  ON public.property_amenities FOR INSERT
-  WITH CHECK (EXISTS (
-    SELECT 1 FROM public.properties
-    WHERE properties.id = property_amenities.property_id
-      AND properties.created_by = auth.uid()
-  ));
+CREATE INDEX "idx_audit_logs_entity" ON "public"."audit_logs" USING "btree" ("entity_type", "entity_id");
 
-CREATE POLICY "Users can delete own property amenities"
-  ON public.property_amenities FOR DELETE
-  USING (EXISTS (
-    SELECT 1 FROM public.properties
-    WHERE properties.id = property_amenities.property_id
-      AND properties.created_by = auth.uid()
-  ));
+CREATE INDEX "idx_audit_logs_performed_at" ON "public"."audit_logs" USING "btree" ("performed_at" DESC);
 
--- === leads ===
-ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
+CREATE INDEX "idx_audit_logs_performed_by" ON "public"."audit_logs" USING "btree" ("performed_by");
 
-CREATE POLICY "Anyone can submit a lead"
-  ON public.leads FOR INSERT
-  WITH CHECK (
-    char_length(TRIM(BOTH FROM name)) > 0
-    AND char_length(TRIM(BOTH FROM email)) > 2
-    AND email ~* '^[^@]+@[^@]+\.[^@]+$'
-  );
+CREATE INDEX "idx_leads_created_at" ON "public"."leads" USING "btree" ("created_at" DESC);
 
-CREATE POLICY "Admins can view leads"
-  ON public.leads FOR SELECT
-  USING (has_role(auth.uid(), 'admin'));
+CREATE INDEX "idx_leads_property_id" ON "public"."leads" USING "btree" ("property_id");
 
-CREATE POLICY "Admins can update leads"
-  ON public.leads FOR UPDATE
-  USING (has_role(auth.uid(), 'admin'));
+CREATE INDEX "idx_leads_status_created" ON "public"."leads" USING "btree" ("status", "created_at" DESC);
 
-CREATE POLICY "Admins can delete leads"
-  ON public.leads FOR DELETE
-  USING (has_role(auth.uid(), 'admin'));
+CREATE INDEX "idx_locations_address" ON "public"."locations" USING "btree" ("province", "district", "municipality_or_city");
 
-CREATE POLICY "Moderators can view leads"
-  ON public.leads FOR SELECT
-  USING (has_role(auth.uid(), 'moderator'));
+CREATE INDEX "idx_locations_display_name" ON "public"."locations" USING "btree" ("display_name");
 
-CREATE POLICY "Moderators can update leads"
-  ON public.leads FOR UPDATE
-  USING (has_role(auth.uid(), 'moderator'));
+CREATE INDEX "idx_locations_district" ON "public"."locations" USING "btree" ("district");
 
--- === property_views ===
-ALTER TABLE public.property_views ENABLE ROW LEVEL SECURITY;
+CREATE INDEX "idx_locations_municipality" ON "public"."locations" USING "btree" ("municipality_or_city");
 
-CREATE POLICY "Anyone can log a view"
-  ON public.property_views FOR INSERT
-  WITH CHECK (true);
+CREATE INDEX "idx_locations_parent_id" ON "public"."locations" USING "btree" ("parent_id");
 
-CREATE POLICY "Admins can read views"
-  ON public.property_views FOR SELECT
-  USING (has_role(auth.uid(), 'admin'));
+CREATE INDEX "idx_locations_province" ON "public"."locations" USING "btree" ("province");
 
--- === audit_logs ===
-ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
+CREATE INDEX "idx_locations_search_key" ON "public"."locations" USING "btree" ("search_key");
 
-CREATE POLICY "Authenticated users can insert audit logs"
-  ON public.audit_logs FOR INSERT
-  WITH CHECK (auth.uid() = performed_by);
+CREATE INDEX "idx_properties_created_at" ON "public"."properties" USING "btree" ("created_at" DESC);
 
-CREATE POLICY "Admins can view audit logs"
-  ON public.audit_logs FOR SELECT
-  USING (has_role(auth.uid(), 'admin'));
+CREATE INDEX "idx_properties_created_by" ON "public"."properties" USING "btree" ("created_by");
 
-CREATE POLICY "Moderators can view audit logs"
-  ON public.audit_logs FOR SELECT
-  USING (has_role(auth.uid(), 'moderator'));
+CREATE INDEX "idx_properties_location_id" ON "public"."properties" USING "btree" ("location_id");
 
--- ─────────────────────────────────────────────────────────────
--- 8. STORAGE BUCKET & POLICIES
--- ─────────────────────────────────────────────────────────────
+CREATE INDEX "idx_properties_price" ON "public"."properties" USING "btree" ("price");
+
+CREATE INDEX "idx_properties_property_public_id" ON "public"."properties" USING "btree" ("property_public_id");
+
+CREATE UNIQUE INDEX "idx_properties_public_id" ON "public"."properties" USING "btree" ("property_public_id");
+
+CREATE INDEX "idx_properties_status" ON "public"."properties" USING "btree" ("status");
+
+CREATE INDEX "idx_properties_status_area" ON "public"."properties" USING "btree" ("status", "area_sqft");
+
+CREATE INDEX "idx_properties_status_created" ON "public"."properties" USING "btree" ("status", "created_at" DESC);
+
+CREATE INDEX "idx_properties_status_location" ON "public"."properties" USING "btree" ("status", "location_id", "created_at" DESC);
+
+CREATE INDEX "idx_properties_status_not_deleted" ON "public"."properties" USING "btree" ("status", "is_deleted") WHERE ("is_deleted" = false);
+
+CREATE INDEX "idx_properties_status_price" ON "public"."properties" USING "btree" ("status", "price");
+
+CREATE INDEX "idx_properties_status_type" ON "public"."properties" USING "btree" ("status", "type");
+
+CREATE INDEX "idx_properties_type" ON "public"."properties" USING "btree" ("type");
+
+CREATE INDEX "idx_properties_view_count" ON "public"."properties" USING "btree" ("view_count" DESC);
+
+CREATE INDEX "idx_property_amenities_property_id" ON "public"."property_amenities" USING "btree" ("property_id");
+
+CREATE INDEX "idx_property_images_property_id" ON "public"."property_images" USING "btree" ("property_id");
+
+CREATE INDEX "idx_property_views_property_id" ON "public"."property_views" USING "btree" ("property_id");
+
+CREATE INDEX "idx_property_views_property_viewed" ON "public"."property_views" USING "btree" ("property_id", "viewed_at" DESC);
+
+CREATE INDEX "idx_user_roles_user_id" ON "public"."user_roles" USING "btree" ("user_id");
+
+CREATE UNIQUE INDEX "locations_address_unique" ON "public"."locations" USING "btree" (COALESCE("province", ''::"text"), COALESCE("district", ''::"text"), COALESCE("municipality_or_city", ''::"text"), COALESCE("ward", 0), COALESCE("area_name", ''::"text"));
+
+CREATE OR REPLACE TRIGGER "update_leads_updated_at" BEFORE UPDATE ON "public"."leads" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+CREATE OR REPLACE TRIGGER "update_properties_updated_at" BEFORE UPDATE ON "public"."properties" FOR EACH ROW EXECUTE FUNCTION "public"."update_properties_updated_at"();
+
+CREATE OR REPLACE TRIGGER "validate_property_area" BEFORE INSERT OR UPDATE ON "public"."properties" FOR EACH ROW EXECUTE FUNCTION "public"."validate_area_values"();
+
+ALTER TABLE ONLY "public"."audit_logs"
+    ADD CONSTRAINT "audit_logs_performed_by_fkey" FOREIGN KEY ("performed_by") REFERENCES "public"."profiles"("id");
+
+ALTER TABLE ONLY "public"."leads"
+    ADD CONSTRAINT "leads_property_id_fkey" FOREIGN KEY ("property_id") REFERENCES "public"."properties"("id") ON DELETE SET NULL;
+
+ALTER TABLE ONLY "public"."locations"
+    ADD CONSTRAINT "locations_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "public"."locations"("id") ON DELETE SET NULL;
+
+ALTER TABLE ONLY "public"."profiles"
+    ADD CONSTRAINT "profiles_id_fkey" FOREIGN KEY ("id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."properties"
+    ADD CONSTRAINT "properties_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
+
+ALTER TABLE ONLY "public"."properties"
+    ADD CONSTRAINT "properties_location_id_fkey" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE SET NULL;
+
+ALTER TABLE ONLY "public"."property_amenities"
+    ADD CONSTRAINT "property_amenities_amenity_id_fkey" FOREIGN KEY ("amenity_id") REFERENCES "public"."amenities"("id") ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."property_amenities"
+    ADD CONSTRAINT "property_amenities_property_id_fkey" FOREIGN KEY ("property_id") REFERENCES "public"."properties"("id") ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."property_images"
+    ADD CONSTRAINT "property_images_property_id_fkey" FOREIGN KEY ("property_id") REFERENCES "public"."properties"("id") ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."property_views"
+    ADD CONSTRAINT "property_views_property_id_fkey" FOREIGN KEY ("property_id") REFERENCES "public"."properties"("id") ON DELETE CASCADE;
+
+ALTER TABLE ONLY "public"."user_roles"
+    ADD CONSTRAINT "user_roles_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+CREATE POLICY "Admins can delete leads" ON "public"."leads" FOR DELETE TO "authenticated" USING ("public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"));
+
+CREATE POLICY "Admins can do everything with properties" ON "public"."properties" USING ("public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"));
+
+CREATE POLICY "Admins can manage amenities" ON "public"."amenities" USING ("public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"));
+
+CREATE POLICY "Admins can manage locations" ON "public"."locations" USING ("public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"));
+
+CREATE POLICY "Admins can manage property amenities" ON "public"."property_amenities" USING ("public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"));
+
+CREATE POLICY "Admins can manage property images" ON "public"."property_images" USING ("public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"));
+
+CREATE POLICY "Admins can read views" ON "public"."property_views" FOR SELECT USING ("public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"));
+
+CREATE POLICY "Admins can update leads" ON "public"."leads" FOR UPDATE TO "authenticated" USING ("public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role")) WITH CHECK ("public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"));
+
+CREATE POLICY "Admins can view all profiles" ON "public"."profiles" FOR SELECT TO "authenticated" USING ("public"."has_role"("auth"."uid"(), 'moderator'::"public"."app_role"));
+
+CREATE POLICY "Admins can view audit logs" ON "public"."audit_logs" FOR SELECT TO "authenticated" USING ("public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"));
+
+CREATE POLICY "Admins can view leads" ON "public"."leads" FOR SELECT TO "authenticated" USING ("public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"));
+
+CREATE POLICY "Amenities are publicly readable" ON "public"."amenities" FOR SELECT USING (true);
+
+CREATE POLICY "Anyone can log a view" ON "public"."property_views" FOR INSERT TO "authenticated", "anon" WITH CHECK (true);
+
+CREATE POLICY "Anyone can submit a lead" ON "public"."leads" FOR INSERT TO "authenticated", "anon" WITH CHECK ((("char_length"(TRIM(BOTH FROM "name")) > 0) AND ("char_length"(TRIM(BOTH FROM "email")) > 2) AND ("email" ~* '^[^@]+@[^@]+\.[^@]+$'::"text")));
+
+CREATE POLICY "Authenticated users can create locations" ON "public"."locations" FOR INSERT TO "authenticated" WITH CHECK ((("char_length"(TRIM(BOTH FROM COALESCE("province", ''::"text"))) > 0) AND ("char_length"(TRIM(BOTH FROM COALESCE("district", ''::"text"))) > 0) AND ("char_length"(TRIM(BOTH FROM COALESCE("municipality_or_city", ''::"text"))) > 0)));
+
+CREATE POLICY "Authenticated users can insert audit logs" ON "public"."audit_logs" FOR INSERT TO "authenticated" WITH CHECK (("auth"."uid"() = "performed_by"));
+
+CREATE POLICY "Locations are publicly readable" ON "public"."locations" FOR SELECT USING (true);
+
+CREATE POLICY "Moderators can update properties" ON "public"."properties" FOR UPDATE TO "authenticated" USING ("public"."has_role"("auth"."uid"(), 'moderator'::"public"."app_role")) WITH CHECK ("public"."has_role"("auth"."uid"(), 'moderator'::"public"."app_role"));
+
+CREATE POLICY "Moderators can view all properties" ON "public"."properties" FOR SELECT TO "authenticated" USING ("public"."has_role"("auth"."uid"(), 'moderator'::"public"."app_role"));
+
+CREATE POLICY "Moderators can view audit logs" ON "public"."audit_logs" FOR SELECT TO "authenticated" USING ("public"."has_role"("auth"."uid"(), 'moderator'::"public"."app_role"));
+
+CREATE POLICY "Property amenities are publicly readable" ON "public"."property_amenities" FOR SELECT USING (true);
+
+CREATE POLICY "Public can view property images" ON "public"."property_images" FOR SELECT USING (true);
+
+CREATE POLICY "Public can view published properties" ON "public"."properties" FOR SELECT USING ((("status" = 'published'::"public"."property_status") AND ("is_deleted" = false)));
+
+CREATE POLICY "Super admins can manage roles" ON "public"."user_roles" TO "authenticated" USING ("public"."has_role"("auth"."uid"(), 'super_admin'::"public"."app_role")) WITH CHECK ("public"."has_role"("auth"."uid"(), 'super_admin'::"public"."app_role"));
+
+CREATE POLICY "Users can create own draft properties" ON "public"."properties" FOR INSERT WITH CHECK ((("auth"."uid"() = "created_by") AND ("status" = 'draft'::"public"."property_status")));
+
+CREATE POLICY "Users can delete own properties" ON "public"."properties" FOR DELETE TO "authenticated" USING ((("auth"."uid"() = "created_by") AND ("is_deleted" = false)));
+
+CREATE POLICY "Users can delete own property amenities" ON "public"."property_amenities" FOR DELETE TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."properties"
+  WHERE (("properties"."id" = "property_amenities"."property_id") AND ("properties"."created_by" = "auth"."uid"())))));
+
+CREATE POLICY "Users can delete own property images" ON "public"."property_images" FOR DELETE TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."properties"
+  WHERE (("properties"."id" = "property_images"."property_id") AND ("properties"."created_by" = "auth"."uid"())))));
+
+CREATE POLICY "Users can insert own profile" ON "public"."profiles" FOR INSERT WITH CHECK (("auth"."uid"() = "id"));
+
+CREATE POLICY "Users can insert own property amenities" ON "public"."property_amenities" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."properties"
+  WHERE (("properties"."id" = "property_amenities"."property_id") AND ("properties"."created_by" = "auth"."uid"())))));
+
+CREATE POLICY "Users can insert own property images" ON "public"."property_images" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."properties"
+  WHERE (("properties"."id" = "property_images"."property_id") AND ("properties"."created_by" = "auth"."uid"())))));
+
+CREATE POLICY "Users can update own draft properties" ON "public"."properties" FOR UPDATE TO "authenticated" USING ((("auth"."uid"() = "created_by") AND ("status" = 'draft'::"public"."property_status") AND ("is_deleted" = false))) WITH CHECK ((("auth"."uid"() = "created_by") AND ("status" = 'draft'::"public"."property_status") AND ("is_deleted" = false)));
+
+CREATE POLICY "Users can update own profile" ON "public"."profiles" FOR UPDATE USING (("auth"."uid"() = "id"));
+
+CREATE POLICY "Users can update own property images" ON "public"."property_images" FOR UPDATE TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."properties"
+  WHERE (("properties"."id" = "property_images"."property_id") AND ("properties"."created_by" = "auth"."uid"())))));
+
+CREATE POLICY "Users can view own profile" ON "public"."profiles" FOR SELECT USING (("auth"."uid"() = "id"));
+
+CREATE POLICY "Users can view own properties" ON "public"."properties" FOR SELECT TO "authenticated" USING ((("auth"."uid"() = "created_by") AND ("is_deleted" = false)));
+
+CREATE POLICY "Users can view own roles" ON "public"."user_roles" FOR SELECT TO "authenticated" USING (("auth"."uid"() = "user_id"));
+
+ALTER TABLE "public"."amenities" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."audit_logs" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."leads" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."locations" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."profiles" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."properties" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."property_amenities" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."property_images" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."property_views" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."user_roles" ENABLE ROW LEVEL SECURITY;
+
+GRANT USAGE ON SCHEMA "public" TO "postgres";
+GRANT USAGE ON SCHEMA "public" TO "anon";
+GRANT USAGE ON SCHEMA "public" TO "authenticated";
+GRANT USAGE ON SCHEMA "public" TO "service_role";
+
+GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "anon";
+GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
+
+GRANT ALL ON FUNCTION "public"."has_role"("_user_id" "uuid", "_role" "public"."app_role") TO "anon";
+GRANT ALL ON FUNCTION "public"."has_role"("_user_id" "uuid", "_role" "public"."app_role") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."has_role"("_user_id" "uuid", "_role" "public"."app_role") TO "service_role";
+
+GRANT ALL ON FUNCTION "public"."log_property_view"("_property_id" "uuid", "_session_id" "text", "_user_id" "uuid", "_user_agent" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."log_property_view"("_property_id" "uuid", "_session_id" "text", "_user_id" "uuid", "_user_agent" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."log_property_view"("_property_id" "uuid", "_session_id" "text", "_user_id" "uuid", "_user_agent" "text") TO "service_role";
+
+GRANT ALL ON FUNCTION "public"."rls_auto_enable"() TO "anon";
+GRANT ALL ON FUNCTION "public"."rls_auto_enable"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."rls_auto_enable"() TO "service_role";
+
+GRANT ALL ON FUNCTION "public"."update_properties_updated_at"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_properties_updated_at"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_properties_updated_at"() TO "service_role";
+
+GRANT ALL ON FUNCTION "public"."update_updated_at_column"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_updated_at_column"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_updated_at_column"() TO "service_role";
+
+GRANT ALL ON FUNCTION "public"."validate_area_values"() TO "anon";
+GRANT ALL ON FUNCTION "public"."validate_area_values"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."validate_area_values"() TO "service_role";
+
+GRANT ALL ON TABLE "public"."amenities" TO "anon";
+GRANT ALL ON TABLE "public"."amenities" TO "authenticated";
+GRANT ALL ON TABLE "public"."amenities" TO "service_role";
+
+GRANT ALL ON TABLE "public"."audit_logs" TO "anon";
+GRANT ALL ON TABLE "public"."audit_logs" TO "authenticated";
+GRANT ALL ON TABLE "public"."audit_logs" TO "service_role";
+
+GRANT ALL ON TABLE "public"."leads" TO "anon";
+GRANT ALL ON TABLE "public"."leads" TO "authenticated";
+GRANT ALL ON TABLE "public"."leads" TO "service_role";
+
+GRANT ALL ON TABLE "public"."locations" TO "anon";
+GRANT ALL ON TABLE "public"."locations" TO "authenticated";
+GRANT ALL ON TABLE "public"."locations" TO "service_role";
+
+GRANT ALL ON TABLE "public"."profiles" TO "anon";
+GRANT ALL ON TABLE "public"."profiles" TO "authenticated";
+GRANT ALL ON TABLE "public"."profiles" TO "service_role";
+
+GRANT ALL ON SEQUENCE "public"."property_public_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."property_public_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."property_public_id_seq" TO "service_role";
+
+GRANT ALL ON TABLE "public"."properties" TO "anon";
+GRANT ALL ON TABLE "public"."properties" TO "authenticated";
+GRANT ALL ON TABLE "public"."properties" TO "service_role";
+
+GRANT ALL ON TABLE "public"."property_amenities" TO "anon";
+GRANT ALL ON TABLE "public"."property_amenities" TO "authenticated";
+GRANT ALL ON TABLE "public"."property_amenities" TO "service_role";
+
+GRANT ALL ON TABLE "public"."property_images" TO "anon";
+GRANT ALL ON TABLE "public"."property_images" TO "authenticated";
+GRANT ALL ON TABLE "public"."property_images" TO "service_role";
+
+GRANT ALL ON TABLE "public"."property_views" TO "anon";
+GRANT ALL ON TABLE "public"."property_views" TO "authenticated";
+GRANT ALL ON TABLE "public"."property_views" TO "service_role";
+
+GRANT ALL ON TABLE "public"."user_roles" TO "anon";
+GRANT ALL ON TABLE "public"."user_roles" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_roles" TO "service_role";
+
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "postgres";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "service_role";
+
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "postgres";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "service_role";
+
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "postgres";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "service_role";
+
+-- =============================================================
+-- Outside the public schema: auth trigger, Storage, event triggers
+-- =============================================================
+
+CREATE OR REPLACE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES (
-  'property-images',
-  'property-images',
-  true,
-  5242880,  -- 5 MB
-  ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-)
+VALUES ('property-images', 'property-images', true, 5242880, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
 ON CONFLICT (id) DO NOTHING;
 
-CREATE POLICY "Public can view property images"
-  ON storage.objects FOR SELECT
-  USING (bucket_id = 'property-images');
+CREATE POLICY "Admins can delete property images" ON storage.objects AS PERMISSIVE FOR DELETE TO public
+  USING (((bucket_id = 'property-images'::text) AND public.has_role(auth.uid(), 'admin'::public.app_role)));
 
-CREATE POLICY "Admins can upload property images"
-  ON storage.objects FOR INSERT
-  WITH CHECK (bucket_id = 'property-images' AND has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins can update property images" ON storage.objects AS PERMISSIVE FOR UPDATE TO public
+  USING (((bucket_id = 'property-images'::text) AND public.has_role(auth.uid(), 'admin'::public.app_role)));
 
-CREATE POLICY "Admins can update property images"
-  ON storage.objects FOR UPDATE
-  USING (bucket_id = 'property-images' AND has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins can upload property images" ON storage.objects AS PERMISSIVE FOR INSERT TO public
+  WITH CHECK (((bucket_id = 'property-images'::text) AND public.has_role(auth.uid(), 'admin'::public.app_role)));
 
-CREATE POLICY "Admins can delete property images"
-  ON storage.objects FOR DELETE
-  USING (bucket_id = 'property-images' AND has_role(auth.uid(), 'admin'));
+CREATE POLICY "Authenticated users can upload to own folder" ON storage.objects AS PERMISSIVE FOR INSERT TO authenticated
+  WITH CHECK (((bucket_id = 'property-images'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text)));
 
-CREATE POLICY "Authenticated users can upload to own folder"
-  ON storage.objects FOR INSERT
-  WITH CHECK (bucket_id = 'property-images' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY "Public can view property images" ON storage.objects AS PERMISSIVE FOR SELECT TO public
+  USING ((bucket_id = 'property-images'::text));
 
-CREATE POLICY "Users can update own storage images"
-  ON storage.objects FOR UPDATE
-  USING (bucket_id = 'property-images' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY "Users can delete own storage images" ON storage.objects AS PERMISSIVE FOR DELETE TO authenticated
+  USING (((bucket_id = 'property-images'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text)));
 
-CREATE POLICY "Users can delete own storage images"
-  ON storage.objects FOR DELETE
-  USING (bucket_id = 'property-images' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY "Users can update own storage images" ON storage.objects AS PERMISSIVE FOR UPDATE TO authenticated
+  USING (((bucket_id = 'property-images'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text)));
+
+DROP EVENT TRIGGER IF EXISTS ensure_rls;
+CREATE EVENT TRIGGER ensure_rls ON ddl_command_end
+  WHEN TAG IN ('CREATE TABLE', 'CREATE TABLE AS', 'SELECT INTO')
+  EXECUTE FUNCTION public.rls_auto_enable();

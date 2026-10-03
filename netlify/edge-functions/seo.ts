@@ -158,7 +158,8 @@ async function resolveListingIndex(url: URL, siteUrl: string): Promise<RouteResu
 
 async function resolveProperty(url: URL, slug: string, siteUrl: string): Promise<RouteResult | null> {
   const publicId = parsePropertyPublicId(slug);
-  const filter = publicId ? `property_public_id=eq.${publicId}` : isUUID(slug) ? `id=eq.${slug}` : null;
+  // Old links use the UUID, whose last group can be all digits, so it is checked first.
+  const filter = isUUID(slug) ? `id=eq.${slug}` : publicId ? `property_public_id=eq.${publicId}` : null;
   if (!filter) return notFound();
 
   const result = await supabaseRest<PropertyRow[]>(`properties?select=${PROPERTY_SELECT}&${filter}&limit=1`);

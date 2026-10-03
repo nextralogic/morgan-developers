@@ -8,7 +8,7 @@ describe("privacy policy", () => {
     expect(meta.title).toBe("Privacy Policy | Morgan Developers");
     expect(meta.canonical).toBe("https://example.com/privacy-policy");
     expect(meta.robots).toBeUndefined();
-    expect(meta.description.length).toBeLessThanOrEqual(160);
+    expect(meta.description?.length).toBeLessThanOrEqual(160);
     expect(JSON.stringify(meta.jsonLd)).toContain("BreadcrumbList");
   });
 

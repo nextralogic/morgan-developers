@@ -17,7 +17,7 @@ function readEmbedded(): Record<string, unknown> | null {
   const text = typeof document !== "undefined" ? document.getElementById(INITIAL_DATA_ID)?.textContent : null;
   if (text) {
     try {
-      embedded = JSON.parse(text);
+      embedded = JSON.parse(text) as Record<string, unknown>;
     } catch {
       embedded = null;
     }

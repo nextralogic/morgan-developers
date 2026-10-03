@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -42,8 +43,8 @@ export async function logAction(
       entity_id: entityId,
       action,
       performed_by: user.id,
-      metadata: metadata ?? null,
-    } as any);
+      metadata: (metadata ?? null) as Json,
+    });
   } catch (err) {
     console.warn("Audit log failed (non-critical):", err);
   }

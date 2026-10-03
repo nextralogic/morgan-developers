@@ -67,12 +67,13 @@ export async function logPropertyView(propertyId: string): Promise<void> {
 
   try {
     const sessionId = getSessionId();
-    const { data: { user } } = await supabase.auth.getUser();
+    // The stored session is enough to tag the view; getUser() would add a round trip to the auth server.
+    const { data: { session } } = await supabase.auth.getSession();
 
     await supabase.rpc("log_property_view", {
       _property_id: propertyId,
       _session_id: sessionId,
-      _user_id: user?.id ?? null,
+      _user_id: session?.user.id,
       _user_agent: navigator.userAgent.slice(0, 256),
     });
 
@@ -91,6 +92,8 @@ export interface PropertyWithViewCount {
   view_count: number;
   property_public_id: number;
   area_sqft: number | null;
+  area_value: number | null;
+  area_unit: string | null;
   locations: { name: string } | null;
   property_images: { image_url: string; is_primary: boolean }[];
 }
@@ -101,7 +104,7 @@ export interface PropertyWithViewCount {
 export async function getMostViewedProperties(limit = 6): Promise<PropertyWithViewCount[]> {
   const { data, error } = await supabase
     .from("properties")
-    .select("id, title, price, type, status, view_count, property_public_id, area_sqft, locations(name), property_images(image_url, is_primary)")
+    .select("id, title, price, type, status, view_count, property_public_id, area_sqft, area_value, area_unit, locations(name), property_images(image_url, is_primary)")
     .eq("status", "published")
     .eq("is_deleted", false)
     .order("view_count", { ascending: false })

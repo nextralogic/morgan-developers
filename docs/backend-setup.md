@@ -29,12 +29,19 @@ This applies all SQL migrations in `supabase/migrations/` and creates:
 - All enum types (`app_role`, `property_status`, `property_type`, `lead_source`, `lead_status`)
 - All tables with constraints, defaults, and foreign keys
 - All indexes (search, compound, partial)
-- All functions (`has_role`, `handle_new_user`, `update_updated_at_column`, `validate_area_values`, `log_property_view`)
-- All triggers (auto-profile creation, updated_at, area validation)
+- All functions (`has_role`, `handle_new_user`, `update_updated_at_column`, `update_properties_updated_at`, `validate_area_values`, `log_property_view`, `rls_auto_enable`)
+- All triggers (auto-profile creation, updated_at, area validation) and the `ensure_rls` event trigger that turns on RLS for new public tables
 - All RLS policies for every table
 - Storage bucket `property-images` with RLS policies
 
 **Alternative (fresh project only):** You can use `supabase/schema_snapshot.sql` as a single full-schema import in SQL Editor, but the default path for this repo is `supabase db push`.
+
+The snapshot is generated from the live database, so do not edit it by hand. After a schema change, apply the migration and then refresh the snapshot:
+
+```bash
+supabase db push
+npm run db:snapshot   # needs pg_dump 17+ on PATH (brew install libpq)
+```
 
 ---
 

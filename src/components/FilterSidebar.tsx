@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
@@ -31,6 +32,11 @@ const FilterSidebar = ({
   onReset,
 }: FilterSidebarProps) => {
   const { t } = useTranslation(["properties", "common"]);
+
+  // The thumbs follow the drag locally; the filter (and its search request) is applied once the drag ends.
+  const [draftPrice, setDraftPrice] = useState(priceRange);
+  const [minPrice, maxPrice] = priceRange;
+  useEffect(() => setDraftPrice([minPrice, maxPrice]), [minPrice, maxPrice]);
 
   return (
     <aside className="space-y-7 rounded-xl border bg-card p-6">
@@ -87,12 +93,13 @@ const FilterSidebar = ({
           min={0}
           max={50_000_000}
           step={500_000}
-          value={priceRange}
-          onValueChange={(v) => onPriceRangeChange(v as [number, number])}
+          value={draftPrice}
+          onValueChange={(v) => setDraftPrice(v as [number, number])}
+          onValueCommit={(v) => onPriceRangeChange(v as [number, number])}
         />
         <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-          <span>{priceRange[0].toLocaleString()}</span>
-          <span>{priceRange[1].toLocaleString()}</span>
+          <span>{draftPrice[0].toLocaleString()}</span>
+          <span>{draftPrice[1].toLocaleString()}</span>
         </div>
       </div>
 
