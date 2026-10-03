@@ -37,7 +37,8 @@
       "email": "info@morgandevelopers.com",
       "phone": "+977-1-XXXXXXX"
     },
-    "copyright": "© {{year}} Morgan Developers. All rights reserved."
+    "copyright": "© {{year}} Morgan Developers. All rights reserved.",
+    "privacy": "Privacy Policy"
   },
   "buttons": {
     "viewAll": "View All",
@@ -107,5 +108,10 @@
   },
   "misc": {
     "location": "Location"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "updated": "Last updated: {{date}}",
+    "englishOnly": "This privacy policy is currently available in English only."
   }
 }

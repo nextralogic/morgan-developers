@@ -18,6 +18,7 @@ const PropertyForm = lazy(() => import("./pages/PropertyForm"));
 const LandUnitConverter = lazy(() => import("./pages/LandUnitConverter"));
 const LandUnitConversion = lazy(() => import("./pages/LandUnitConversion"));
 const LandAreaCalculator = lazy(() => import("./pages/LandAreaCalculator"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Toaster = lazy(() => import("@/components/ui/sonner").then((m) => ({ default: m.Toaster })));
 
@@ -34,6 +35,7 @@ const AnimatedRoutes = () => {
         <Route path="/land-unit-converter" element={<PageTransition><LandUnitConverter /></PageTransition>} />
         <Route path="/land-unit-converter/:pair" element={<PageTransition><LandUnitConversion /></PageTransition>} />
         <Route path="/land-area-calculator" element={<PageTransition><LandAreaCalculator /></PageTransition>} />
+        <Route path="/privacy-policy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
         <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
         <Route path="/signup" element={<PageTransition><Signup /></PageTransition>} />
         <Route path="/forgot-password" element={<PageTransition><ForgotPassword /></PageTransition>} />

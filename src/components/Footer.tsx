@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { PRIVACY_POLICY_PATH } from "@/lib/seo/core";
 
 const Footer = () => {
   const { t } = useTranslation("common");
@@ -48,8 +49,9 @@ const Footer = () => {
         </div>
       </div>
       <div className="border-t">
-        <div className="container py-5 text-center text-xs text-muted-foreground">
-          {t("footer.copyright", { year: new Date().getFullYear() })}
+        <div className="container flex flex-col items-center gap-2 py-5 text-xs text-muted-foreground sm:flex-row sm:justify-center sm:gap-4">
+          <span>{t("footer.copyright", { year: new Date().getFullYear() })}</span>
+          <Link to={PRIVACY_POLICY_PATH} className="transition-colors hover:text-primary">{t("footer.privacy")}</Link>
         </div>
       </div>
     </footer>

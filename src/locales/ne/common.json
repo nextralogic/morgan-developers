@@ -37,7 +37,8 @@
       "email": "info@morgandevelopers.com",
       "phone": "+977-1-XXXXXXX"
     },
-    "copyright": "© {{year}} मोर्गन डेभलपर्स। सर्वाधिकार सुरक्षित।"
+    "copyright": "© {{year}} मोर्गन डेभलपर्स। सर्वाधिकार सुरक्षित।",
+    "privacy": "गोपनीयता नीति"
   },
   "buttons": {
     "viewAll": "सबै हेर्नुहोस्",
@@ -107,5 +108,10 @@
   },
   "misc": {
     "location": "स्थान"
+  },
+  "privacy": {
+    "title": "गोपनीयता नीति",
+    "updated": "अन्तिम अद्यावधिक: {{date}}",
+    "englishOnly": "यो गोपनीयता नीति अहिले अंग्रेजीमा मात्र उपलब्ध छ।"
   }
 }

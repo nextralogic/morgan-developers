@@ -9,6 +9,7 @@ import {
   injectHeadTags,
   LAND_AREA_CALCULATOR_PATH,
   LAND_CONVERTER_PATH,
+  PRIVACY_POLICY_PATH,
   isUUID,
   parsePropertyPublicId,
   type MetaTags,
@@ -19,6 +20,7 @@ import { getThumbnailUrl } from "../../src/lib/image-url.ts";
 import { buildLandConversionMeta, findConversionPair } from "../../src/lib/land-conversions.ts";
 import { propertyDataKey } from "../../src/lib/initial-data.ts";
 import { buildLandAreaCalculatorMeta } from "../../src/lib/land-area.ts";
+import { buildPrivacyPolicyMeta } from "../../src/lib/privacy-policy.ts";
 import {
   injectInitialData,
   injectPageContent,
@@ -31,6 +33,7 @@ import {
   renderLandConverterContent,
   renderListingIndexContent,
   renderNotFoundContent,
+  renderPrivacyPolicyContent,
   renderPropertyContent,
   type ListingSummary,
 } from "../lib/page-content.ts";
@@ -60,6 +63,7 @@ const PAGE_ROUTES: [RegExp, string][] = [
   [/^\/land-unit-converter\/?$/, "LandUnitConverter"],
   [/^\/land-unit-converter\/[^/]+\/?$/, "LandUnitConversion"],
   [/^\/land-area-calculator\/?$/, "LandAreaCalculator"],
+  [/^\/privacy-policy\/?$/, "PrivacyPolicy"],
 ];
 
 function pageForPath(path: string): string | null {
@@ -206,6 +210,9 @@ async function resolveRoute(url: URL, siteUrl: string): Promise<RouteResult | nu
   }
   if (path === LAND_AREA_CALCULATOR_PATH || path === `${LAND_AREA_CALCULATOR_PATH}/`) {
     return { meta: buildLandAreaCalculatorMeta(siteUrl), content: renderLandAreaCalculatorContent() };
+  }
+  if (path === PRIVACY_POLICY_PATH || path === `${PRIVACY_POLICY_PATH}/`) {
+    return { meta: buildPrivacyPolicyMeta(siteUrl), content: renderPrivacyPolicyContent() };
   }
   const conversionMatch = path.match(/^\/land-unit-converter\/([^/]+)\/?$/);
   if (conversionMatch) {

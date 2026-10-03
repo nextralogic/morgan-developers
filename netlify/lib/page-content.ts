@@ -12,7 +12,9 @@ import {
   unitName,
   type ConversionPair,
 } from "../../src/lib/land-conversions.ts";
+import { formatPolicyDate, PRIVACY_POLICY_UPDATED, privacyPolicySections } from "../../src/lib/privacy-policy.ts";
 import {
+  BUSINESS,
   buildPropertyPath,
   escapeHtml,
   formatArea,
@@ -21,6 +23,7 @@ import {
   formatPricePerUnit,
   LAND_AREA_CALCULATOR_PATH,
   LAND_CONVERTER_PATH,
+  PRIVACY_POLICY_PATH,
   propertyTypeLabel,
   type SeoLocation,
   type SeoProperty,
@@ -70,6 +73,7 @@ const SITE_NAV = [
   '<a href="/properties">Property for sale in Nepal</a>',
   `<a href="${LAND_CONVERTER_PATH}">Land unit converter</a>`,
   `<a href="${LAND_AREA_CALCULATOR_PATH}">Land area calculator</a>`,
+  `<a href="${PRIVACY_POLICY_PATH}">Privacy policy</a>`,
   "</nav>",
 ].join(" ");
 
@@ -291,6 +295,26 @@ export function renderLandAreaCalculatorContent(): string {
     renderConversionLinks(),
     `<p><a href="${LAND_CONVERTER_PATH}">Land unit converter</a></p>`,
     '<p><a href="/properties">Browse land for sale</a></p>',
+    "</main>",
+  ].join("");
+}
+
+export function renderPrivacyPolicyContent(): string {
+  const sections = privacyPolicySections(BUSINESS.email).map((section) => {
+    const paragraphs = (section.paragraphs ?? []).map((text) => `<p>${escapeHtml(text)}</p>`).join("");
+    const items = section.items?.length
+      ? `<ul>${section.items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+      : "";
+    const note = section.note ? `<p>${escapeHtml(section.note)}</p>` : "";
+    return `<h2>${escapeHtml(section.heading)}</h2>${paragraphs}${items}${note}`;
+  });
+  return [
+    SITE_NAV,
+    "<main>",
+    '<nav aria-label="Breadcrumb"><a href="/">Home</a></nav>',
+    "<h1>Privacy Policy</h1>",
+    `<p>Last updated: ${formatPolicyDate(PRIVACY_POLICY_UPDATED)}</p>`,
+    ...sections,
     "</main>",
   ].join("");
 }

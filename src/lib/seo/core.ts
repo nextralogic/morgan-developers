@@ -270,6 +270,7 @@ export function buildPropertyMeta(siteUrl: string, p: SeoProperty): MetaTags {
 
 export const LAND_CONVERTER_PATH = "/land-unit-converter";
 export const LAND_AREA_CALCULATOR_PATH = "/land-area-calculator";
+export const PRIVACY_POLICY_PATH = "/privacy-policy";
 
 export function buildLandConverterMeta(siteUrl: string): MetaTags {
   const url = `${siteUrl}${LAND_CONVERTER_PATH}`;

@@ -1,6 +1,7 @@
 import type { Config } from "@netlify/edge-functions";
-import { buildPropertyPath, LAND_AREA_CALCULATOR_PATH, LAND_CONVERTER_PATH } from "../../src/lib/seo/core.ts";
+import { buildPropertyPath, LAND_AREA_CALCULATOR_PATH, LAND_CONVERTER_PATH, PRIVACY_POLICY_PATH } from "../../src/lib/seo/core.ts";
 import { CONVERSION_PAIRS, conversionPath } from "../../src/lib/land-conversions.ts";
+import { PRIVACY_POLICY_UPDATED } from "../../src/lib/privacy-policy.ts";
 import { getSiteUrl, supabaseRest } from "../lib/supabase-rest.ts";
 
 /**
@@ -84,6 +85,7 @@ async function sitemap(siteUrl: string): Promise<Response> {
     urlEntry(`${siteUrl}${LAND_CONVERTER_PATH}`, null),
     ...CONVERSION_PAIRS.map((pair) => urlEntry(`${siteUrl}${conversionPath(pair)}`, null)),
     urlEntry(`${siteUrl}${LAND_AREA_CALCULATOR_PATH}`, null),
+    urlEntry(`${siteUrl}${PRIVACY_POLICY_PATH}`, PRIVACY_POLICY_UPDATED),
     ...listings.map((row) =>
       urlEntry(`${siteUrl}${buildPropertyPath(row.title, row.property_public_id)}`, toDate(row.updated_at), listingImages(row))
     ),
