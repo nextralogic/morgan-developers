@@ -7,6 +7,7 @@ import {
   buildPropertyMeta,
   buildPropertyPath,
   injectHeadTags,
+  LAND_AREA_CALCULATOR_PATH,
   LAND_CONVERTER_PATH,
   isUUID,
   parsePropertyPublicId,
@@ -17,6 +18,7 @@ import {
 import { getThumbnailUrl } from "../../src/lib/image-url.ts";
 import { buildLandConversionMeta, findConversionPair } from "../../src/lib/land-conversions.ts";
 import { propertyDataKey } from "../../src/lib/initial-data.ts";
+import { buildLandAreaCalculatorMeta } from "../../src/lib/land-area.ts";
 import {
   injectInitialData,
   injectPageContent,
@@ -24,6 +26,7 @@ import {
   LISTING_SUMMARY_SELECT,
   listingCardImage,
   renderHomeContent,
+  renderLandAreaCalculatorContent,
   renderLandConversionContent,
   renderLandConverterContent,
   renderListingIndexContent,
@@ -31,6 +34,7 @@ import {
   renderPropertyContent,
   type ListingSummary,
 } from "../lib/page-content.ts";
+import { injectModulePreloads } from "../lib/page-chunks.ts";
 import { getSiteUrl, supabaseRest } from "../lib/supabase-rest.ts";
 
 /**
@@ -47,6 +51,21 @@ const PRIVATE_PATHS = [
   /^\/properties\/new\/?$/,
   /^\/properties\/[^/]+\/edit\/?$/,
 ];
+
+/** The lazy page App.tsx renders for each public route, so its code can be preloaded. */
+const PAGE_ROUTES: [RegExp, string][] = [
+  [/^\/(index\.html)?$/, "Index"],
+  [/^\/properties\/?$/, "Properties"],
+  [/^\/properties\/[^/]+\/?$/, "PropertyDetail"],
+  [/^\/land-unit-converter\/?$/, "LandUnitConverter"],
+  [/^\/land-unit-converter\/[^/]+\/?$/, "LandUnitConversion"],
+  [/^\/land-area-calculator\/?$/, "LandAreaCalculator"],
+];
+
+function pageForPath(path: string): string | null {
+  if (PRIVATE_PATHS.some((pattern) => pattern.test(path))) return null;
+  return PAGE_ROUTES.find(([pattern]) => pattern.test(path))?.[1] ?? "NotFound";
+}
 
 /**
  * The columns the listing page reads. The row is also embedded in the HTML so
@@ -185,6 +204,9 @@ async function resolveRoute(url: URL, siteUrl: string): Promise<RouteResult | nu
   if (path === LAND_CONVERTER_PATH || path === `${LAND_CONVERTER_PATH}/`) {
     return { meta: buildLandConverterMeta(siteUrl), content: renderLandConverterContent() };
   }
+  if (path === LAND_AREA_CALCULATOR_PATH || path === `${LAND_AREA_CALCULATOR_PATH}/`) {
+    return { meta: buildLandAreaCalculatorMeta(siteUrl), content: renderLandAreaCalculatorContent() };
+  }
   const conversionMatch = path.match(/^\/land-unit-converter\/([^/]+)\/?$/);
   if (conversionMatch) {
     const pair = findConversionPair(conversionMatch[1]);
@@ -230,13 +252,13 @@ export default async (request: Request, context: Context) => {
   headers.delete("etag");
   for (const [name, value] of Object.entries(CACHE_HEADERS)) headers.set(name, value);
 
-  const body =
-    request.method === "HEAD"
-      ? null
-      : injectInitialData(
-          injectPageContent(injectHeadTags(await response.text(), result.meta, siteUrl), result.content ?? ""),
-          result.initialData
-        );
+  let body: string | null = null;
+  if (request.method !== "HEAD") {
+    body = injectHeadTags(await response.text(), result.meta, siteUrl);
+    body = injectModulePreloads(body, pageForPath(url.pathname));
+    body = injectPageContent(body, result.content ?? "");
+    body = injectInitialData(body, result.initialData);
+  }
   return new Response(body, { status: result.status ?? 200, headers });
 };
 

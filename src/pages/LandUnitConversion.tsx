@@ -25,7 +25,7 @@ import {
 } from "@/lib/land-conversions";
 import { usePageMeta } from "@/lib/seo/usePageMeta";
 import { SITE_URL } from "@/lib/seo/constants";
-import { LAND_CONVERTER_PATH } from "@/lib/seo/core";
+import { LAND_AREA_CALCULATOR_PATH, LAND_CONVERTER_PATH } from "@/lib/seo/core";
 import NotFound from "./NotFound";
 
 const ConversionPage = ({ pair }: { pair: ConversionPair }) => {
@@ -138,6 +138,11 @@ const ConversionPage = ({ pair }: { pair: ConversionPair }) => {
         <p className="mt-6">
           <Link to={LAND_CONVERTER_PATH} className="font-medium underline underline-offset-4 hover:text-primary">
             {t("landConverter.fullConverter")}
+          </Link>
+        </p>
+        <p className="mt-3">
+          <Link to={LAND_AREA_CALCULATOR_PATH} className="font-medium underline underline-offset-4 hover:text-primary">
+            {t("landConverter.calculatorLink")}
           </Link>
         </p>
 

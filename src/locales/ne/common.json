@@ -13,7 +13,8 @@
     "signOut": "साइन आउट",
     "navigation": "नेभिगेसन",
     "openMenu": "मेनु खोल्नुहोस्",
-    "landConverter": "जग्गा नाप रूपान्तरक"
+    "landConverter": "जग्गा नाप रूपान्तरक",
+    "areaCalculator": "जग्गा क्षेत्रफल क्याल्कुलेटर"
   },
   "languageSwitcher": {
     "ariaLabel": "भाषा चयन गर्नुहोस्",

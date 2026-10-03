@@ -13,7 +13,8 @@
     "signOut": "Sign Out",
     "navigation": "Navigation",
     "openMenu": "Open menu",
-    "landConverter": "Land unit converter"
+    "landConverter": "Land unit converter",
+    "areaCalculator": "Land area calculator"
   },
   "languageSwitcher": {
     "ariaLabel": "Select language",

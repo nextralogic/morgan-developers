@@ -17,7 +17,7 @@ import {
 import { AREA_UNITS, type AreaUnit } from "@/lib/area-utils";
 import { usePageMeta } from "@/lib/seo/usePageMeta";
 import { SITE_URL } from "@/lib/seo/constants";
-import { buildLandConverterMeta } from "@/lib/seo/core";
+import { buildLandConverterMeta, LAND_AREA_CALCULATOR_PATH } from "@/lib/seo/core";
 
 const HILL_UNITS: AreaUnit[] = ["ropani", "aana", "paisa", "daam"];
 const TERAI_UNITS: AreaUnit[] = ["bigha", "kattha", "dhur"];
@@ -101,6 +101,11 @@ const LandUnitConverter = () => {
         </section>
 
         <ConversionLinks title={t("landConverter.popularTitle")} />
+        <p className="mt-6">
+          <Link to={LAND_AREA_CALCULATOR_PATH} className="font-medium underline underline-offset-4 hover:text-primary">
+            {t("landConverter.calculatorLink")}
+          </Link>
+        </p>
 
         <LandConverterCta />
       </main>

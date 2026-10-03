@@ -89,6 +89,58 @@
         "name_one": "acre",
         "name_other": "acres"
       }
-    }
+    },
+    "calculatorLink": "Know the length and breadth? Calculate the land area"
+  },
+  "areaCalculator": {
+    "breadcrumb": "Land Area Calculator",
+    "eyebrow": "Free tool",
+    "title": "Land Area Calculator",
+    "intro": "Enter the length and breadth of a plot in feet or metres to get its area in square feet, aana, ropani-aana-paisa-daam and bigha-kattha-dhur. For a plot with uneven sides, enter all four sides.",
+    "modes": {
+      "label": "Plot shape",
+      "rectangle": "Length × breadth",
+      "uneven": "Four uneven sides"
+    },
+    "unitLabel": "Measured in",
+    "units": {
+      "feet": "Feet",
+      "metres": "Metres"
+    },
+    "fields": {
+      "length": "Length",
+      "breadth": "Breadth",
+      "front": "Front",
+      "back": "Back",
+      "left": "Left side",
+      "right": "Right side"
+    },
+    "unevenNote": "Estimate: the averages of each pair of opposite sides, multiplied together. Close for nearly rectangular plots; a surveyor (amin) can give the exact area.",
+    "invalid": "Enter a number greater than zero for every side.",
+    "resultsTitle": "Plot area",
+    "result": "{{sqft}} sq ft = {{aana}} aana",
+    "results": {
+      "sqft": "Square feet",
+      "sqm": "Square metres",
+      "aana": "Aana",
+      "hill": "Ropani-Aana-Paisa-Daam",
+      "kattha": "Kattha",
+      "terai": "Bigha-Kattha-Dhur"
+    },
+    "commonTitle": "Common plot sizes in aana",
+    "table": {
+      "size": "Plot size",
+      "sqft": "Sq ft",
+      "aana": "Aana",
+      "hill": "R-A-P-D",
+      "dhur": "Dhur"
+    },
+    "sizeValue": "{{length}} × {{breadth}} ft",
+    "howTitle": "How to calculate land area",
+    "howRectangle": "Multiply the length by the breadth. A {{length}} × {{breadth}} feet plot is {{sqft}} square feet. One aana is {{aanaSqft}} square feet, so {{sqft}} ÷ {{aanaSqft}} = {{aana}} aana ({{hill}} in ropani-aana-paisa-daam).",
+    "howMetres": "If you measured in metres, multiply the area in square metres by {{factor}} to get square feet.",
+    "howUneven": "For a plot whose opposite sides differ, average each pair of opposite sides and multiply the two averages.",
+    "convertTitle": "Convert land units",
+    "converterLink": "Open the land unit converter"
   }
 }

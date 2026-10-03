@@ -1,5 +1,6 @@
 import { AREA_UNITS, listingAreaSqft, sqftToNepali, sqftToTerai, type AreaUnit } from "../../src/lib/area-utils.ts";
 import { INITIAL_DATA_ID } from "../../src/lib/initial-data.ts";
+import { COMMON_PLOT_SIZES, EXAMPLE_PLOT, rectangleAreaSqft } from "../../src/lib/land-area.ts";
 import {
   CONVERSION_PAIRS,
   conversionFactor,
@@ -18,6 +19,7 @@ import {
   formatNprShort,
   formatPlace,
   formatPricePerUnit,
+  LAND_AREA_CALCULATOR_PATH,
   LAND_CONVERTER_PATH,
   propertyTypeLabel,
   type SeoLocation,
@@ -67,6 +69,7 @@ const SITE_NAV = [
   '<a href="/">Home</a>',
   '<a href="/properties">Property for sale in Nepal</a>',
   `<a href="${LAND_CONVERTER_PATH}">Land unit converter</a>`,
+  `<a href="${LAND_AREA_CALCULATOR_PATH}">Land area calculator</a>`,
   "</nav>",
 ].join(" ");
 
@@ -169,6 +172,8 @@ function renderLandSize(p: SeoProperty): string {
   ].join("");
 }
 
+const CALCULATOR_LINK = `<p><a href="${LAND_AREA_CALCULATOR_PATH}">Know the length and breadth? Calculate the land area</a></p>`;
+
 function renderUnitTable(units: AreaUnit[]): string {
   const sqftPerSqm = AREA_UNITS.sq_meter.toSqft;
   const rows = units.map((unit) => {
@@ -194,6 +199,7 @@ export function renderLandConverterContent(): string {
     renderUnitTable(["bigha", "kattha", "dhur"]),
     "<h2>Popular conversions</h2>",
     renderConversionLinks(),
+    CALCULATOR_LINK,
     '<p><a href="/properties">Browse land for sale</a></p>',
     "</main>",
   ].join("");
@@ -241,6 +247,49 @@ export function renderLandConversionContent(pair: ConversionPair): string {
     "<h2>Other land unit conversions</h2>",
     renderConversionLinks(pair),
     `<p><a href="${LAND_CONVERTER_PATH}">Convert between every unit in the full land unit converter</a></p>`,
+    CALCULATOR_LINK,
+    '<p><a href="/properties">Browse land for sale</a></p>',
+    "</main>",
+  ].join("");
+}
+
+function hillNotation(sqft: number): string {
+  const { ropani, anna, paisa, dam } = sqftToNepali(sqft);
+  return `${ropani}-${anna}-${paisa}-${dam}`;
+}
+
+export function renderLandAreaCalculatorContent(): string {
+  const rows = COMMON_PLOT_SIZES.map(([length, breadth]) => {
+    const sqft = rectangleAreaSqft(length, breadth, "feet");
+    return (
+      `<tr><td>${length} × ${breadth} ft</td><td>${formatConverted(sqft)}</td>` +
+      `<td>${formatConverted(sqft / AREA_UNITS.aana.toSqft)}</td><td>${hillNotation(sqft)}</td>` +
+      `<td>${formatConverted(sqft / AREA_UNITS.dhur.toSqft)}</td></tr>`
+    );
+  });
+  const [length, breadth] = EXAMPLE_PLOT;
+  const example = rectangleAreaSqft(length, breadth, "feet");
+  return [
+    SITE_NAV,
+    "<main>",
+    '<nav aria-label="Breadcrumb"><a href="/">Home</a></nav>',
+    "<h1>Land Area Calculator</h1>",
+    "<p>Enter the length and breadth of a plot in feet or metres to get its area in square feet, square metres, aana, " +
+      "ropani-aana-paisa-daam and bigha-kattha-dhur. For a plot with uneven sides, enter all four sides.</p>",
+    "<h2>Common plot sizes in aana</h2>",
+    "<table><thead><tr><th>Plot size</th><th>Square feet</th><th>Aana</th><th>Ropani-Aana-Paisa-Daam</th><th>Dhur</th></tr></thead>" +
+      `<tbody>${rows.join("")}</tbody></table>`,
+    "<h2>How to calculate land area</h2>",
+    `<p>Multiply the length by the breadth. A ${length} × ${breadth} feet plot is ${formatConverted(example)} square feet. ` +
+      `One aana is ${formatConverted(AREA_UNITS.aana.toSqft)} square feet, so ${formatConverted(example)} ÷ ` +
+      `${formatConverted(AREA_UNITS.aana.toSqft)} = ${formatConverted(example / AREA_UNITS.aana.toSqft)} aana ` +
+      `(${hillNotation(example)} in ropani-aana-paisa-daam).</p>`,
+    `<p>If you measured in metres, multiply the area in square metres by ${AREA_UNITS.sq_meter.toSqft} to get square feet.</p>`,
+    "<p>For a plot whose opposite sides differ, average each pair of opposite sides and multiply the two averages. " +
+      "This is a close estimate for plots that are nearly rectangular; a surveyor (amin) can give the exact area.</p>",
+    "<h2>Convert land units</h2>",
+    renderConversionLinks(),
+    `<p><a href="${LAND_CONVERTER_PATH}">Land unit converter</a></p>`,
     '<p><a href="/properties">Browse land for sale</a></p>',
     "</main>",
   ].join("");

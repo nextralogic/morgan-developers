@@ -14,7 +14,8 @@ interface PropertyPaginationProps {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-  getPageHref: (page: number) => string;
+  /** Real URLs for public lists so crawlers can follow them. Admin lists leave it out. */
+  getPageHref?: (page: number) => string;
 }
 
 /** Build the list of page numbers to display (with ellipsis gaps). */
@@ -44,7 +45,7 @@ const PropertyPagination = ({ page, totalPages, onPageChange, getPageHref }: Pro
 
   // Real hrefs keep every page crawlable; clicks stay client-side.
   const linkProps = (target: number) => ({
-    href: getPageHref(target),
+    href: getPageHref ? getPageHref(target) : "#",
     onClick: (e: MouseEvent<HTMLAnchorElement>) => {
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
       e.preventDefault();
