@@ -4,7 +4,7 @@
 
 - [Supabase CLI](https://supabase.com/docs/guides/cli/getting-started) installed
 - A Supabase project (create at https://supabase.com/dashboard)
-- Node.js 18+ and npm/bun
+- Node.js 18+ and npm
 
 ---
 

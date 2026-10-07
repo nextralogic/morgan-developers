@@ -2,11 +2,9 @@
 
 Open items from the code audit on 2026-10-03.
 
-## Needs a decision
+## In progress
 
-- [ ] **Lead emails are not sent.** `supabase/functions/lead-notification` only logs each enquiry; the Resend email code is commented out. New leads only appear in the admin dashboard.
-- [ ] **Messenger share button is broken.** Facebook's send dialog needs an `app_id` (`src/components/ShareButtons.tsx`). Add a Facebook app ID or remove the button.
-- [ ] **Keep one lockfile.** Both `bun.lockb` and `package-lock.json` exist, so Netlify may install with Bun. Remove the one that isn't used.
+- [ ] **Email an alert for every new lead.** `supabase/functions/lead-notification` only logs each enquiry, so new leads appear only in the admin dashboard. Decided 2026-10-07: send the alerts through Resend's free plan. Waiting on the Resend account and API key.
 
 ## Housekeeping
 
@@ -32,6 +30,10 @@ Open items from the code audit on 2026-10-03.
 - [x] **Deployed the updated `lead-notification` function** (2026-10-03).
   - It now returns only `{ ok: true }` instead of the enquirer's details.
   - Checked on 2026-10-07: the live source matches the repo, and calls without a login token are still rejected.
+- [x] **Removed the broken Messenger share button** (2026-10-07). Facebook's send dialog needs an app ID, which the site doesn't have. The share bar keeps Facebook, WhatsApp, Viber and copy link.
+- [x] **Deleted the stale `bun.lockb`** (2026-10-07).
+  - It had not changed since the first commit, and its presence could make Netlify install with Bun.
+  - Installs now come only from `package-lock.json`, which matches `package.json`.
 - [x] **Pointed `.env` at the Mumbai project** (`gksaovhgxlxvogxsejkj`).
   - It is still tracked in git despite `.gitignore`. It holds only public `VITE_` values.
   - Untrack it (`git rm --cached .env`) only after the same values are set as Netlify environment variables, because the build reads them.

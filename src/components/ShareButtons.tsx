@@ -1,4 +1,4 @@
-import { Facebook, MessageCircle, Send, Share2, Link as LinkIcon } from "lucide-react";
+import { Facebook, Share2, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -20,12 +20,6 @@ const ShareButtons = ({ title, url }: ShareButtonsProps) => {
       icon: Facebook,
       href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
       color: "hover:bg-[#1877F2]/10 hover:text-[#1877F2]",
-    },
-    {
-      label: t("share.platforms.messenger"),
-      icon: MessageCircle,
-      href: `https://www.facebook.com/dialog/send?link=${encodedUrl}&app_id=&redirect_uri=${encodedUrl}`,
-      color: "hover:bg-[#0099FF]/10 hover:text-[#0099FF]",
     },
     {
       label: t("share.platforms.whatsapp"),
