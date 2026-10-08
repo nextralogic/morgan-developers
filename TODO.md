@@ -20,8 +20,14 @@ Open items from the code audit on 2026-10-03 and the security review on 2026-10-
   4. ~~`supabase functions delete lead-notification`.~~ Done 2026-10-08.
   5. In Cloudflare, add a Turnstile widget for `morgandevelopers.com`. Set `VITE_TURNSTILE_SITE_KEY` in Netlify's environment and redeploy.
   6. Only then set the secret: `supabase secrets set TURNSTILE_SECRET_KEY=...`. Once it's set, enquiries without a valid token are refused.
-  7. Add Cloudflare Turnstile to the privacy policy (`src/lib/privacy-policy.ts`): it checks each enquiring visitor.
+  7. ~~Add Cloudflare Turnstile to the privacy policy (`src/lib/privacy-policy.ts`).~~ Done 2026-10-08, along with Resend.
 - [ ] **Send one test lead after Resend is set up** and confirm exactly one email arrives.
+- [ ] **Review the Supabase Auth settings** (dashboard → Authentication). The CLI can't read them, so they weren't part of the review.
+  1. Email provider: "Confirm email" is on, so nobody can sign up with someone else's address.
+  2. URL Configuration: the Site URL is `https://morgandevelopers.com`, and Redirect URLs list only our own domains, without broad wildcards. Google sign-in and password resets only redirect to these.
+  3. Minimum password length: the forms ask for 6. Consider 8, and update the forms' `minLength` to match.
+  4. Rate limits for sign-ups and emails are on (the default).
+  5. Run the Security Advisor (Database → Advisors) once. On 2026-10-08 the same checks run by hand found nothing: every table has RLS, every function has a fixed `search_path`, and no write policy is always true.
 - [ ] **Limit view counting per visitor IP.** `log_property_view` counts any published listing, so anyone can inflate a view count by sending a new session ID with each request. A per-IP limit needs the real client IP from PostgREST's `request.headers`. Verify which header Supabase sets before relying on it, because `x-forwarded-for` can be spoofed by the client.
 - [ ] **Plan the major-version upgrades `npm audit fix` couldn't make.**
   - Tailwind 4 (`braces`/`micromatch` advisories, build-time only).
