@@ -6,7 +6,7 @@ import { buildBreadcrumbJsonLd, PRIVACY_POLICY_PATH, withBrand, type MetaTags } 
  * each renderer escapes it.
  */
 
-export const PRIVACY_POLICY_UPDATED = "2026-10-03";
+export const PRIVACY_POLICY_UPDATED = "2026-10-08";
 
 /** "October 3, 2026" for an ISO date, read as UTC so the day never shifts. */
 export function formatPolicyDate(isoDate: string, locale = "en-US"): string {
@@ -65,6 +65,8 @@ export function privacyPolicySections(email: string): PolicySection[] {
       items: [
         "Supabase, for our database, sign-in and photo storage. Its servers for this website are in Mumbai, India.",
         "Netlify, which hosts the website.",
+        "Cloudflare, whose Turnstile check on the enquiry form tells people apart from automated spam. To do this it looks at your browser and device when you send an enquiry.",
+        "Resend, which emails each new enquiry to our staff.",
         "Google, only if you choose to sign in with Google.",
       ],
     },
