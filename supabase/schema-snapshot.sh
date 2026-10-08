@@ -25,7 +25,9 @@ dump_public_schema() {
 # functions (`supabase db dump` skips all event triggers). Postgres writes the
 # statements from its own catalog, so they match the live definitions.
 dump_supabase_schemas() {
-  supabase db query --linked "$(cat <<'SQL'
+  local result errors
+  errors="$(mktemp)"
+  result="$(supabase db query --linked "$(cat <<'SQL'
 set search_path = '';
 select string_agg(statement, E'\n\n' order by section, name) as sql
 from (
@@ -64,7 +66,16 @@ from (
   where f.pronamespace = 'public'::regnamespace and e.evtenabled <> 'D'
 ) statements
 SQL
-)" 2>/dev/null | node -e '
+)" 2>"$errors")" || true
+  # Show the CLI's own error (login, network, API) instead of failing in the JSON parse below.
+  if [[ "$result" != *'"rows"'* ]]; then
+    echo "schema-snapshot: supabase db query failed:" >&2
+    cat "$errors" >&2
+    rm -f "$errors"
+    return 1
+  fi
+  rm -f "$errors"
+  printf '%s' "$result" | node -e '
     let text = "";
     process.stdin.on("data", (chunk) => (text += chunk)).on("end", () => {
       const [row] = JSON.parse(text.slice(text.indexOf("{"))).rows;
