@@ -1,9 +1,18 @@
 export const THUMBNAIL_WIDTH = 480;
 const THUMBNAIL_SUFFIX = "-thumb.webp";
+const LISTING_PHOTOS_PATH = "/storage/v1/object/public/property-images/";
 
 /** Storage path of the thumbnail stored next to an uploaded image. */
 export function getThumbnailPath(path: string): string {
   return path.replace(/\.[a-z0-9]+$/i, "") + THUMBNAIL_SUFFIX;
+}
+
+/** Storage paths of an uploaded listing photo and its thumbnail; none for photos hosted elsewhere. */
+export function storagePathsForImage(url: string): string[] {
+  const start = url.indexOf(LISTING_PHOTOS_PATH);
+  if (start === -1) return [];
+  const path = decodeURIComponent(url.slice(start + LISTING_PHOTOS_PATH.length).split("?")[0]);
+  return path ? [path, getThumbnailPath(path)] : [];
 }
 
 /**

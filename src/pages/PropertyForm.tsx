@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import ImageUploadQueue from "@/components/ImageUploadQueue";
 import NepalAddressSelect from "@/components/NepalAddressSelect";
 import { upsertLocation, getLocationById } from "@/services/locationService";
+import { saveListingImages } from "@/services/propertyImageService";
 import type { NepalAddress } from "@/utils/nepalAddress";
 import { AREA_UNITS, convertToSqft, type AreaUnit } from "@/lib/area-utils";
 import { useTranslation } from "react-i18next";
@@ -183,22 +184,12 @@ const PropertyForm = () => {
       publicId = data.property_public_id;
     }
 
-    // Save the new image rows before removing the old ones, so a failed save never leaves the listing without photos.
-    const imgRows = images.map((img, i) => ({
-      property_id: propertyId!,
-      image_url: img.image_url,
-      is_primary: img.is_primary,
-      display_order: i,
-    }));
-    const { data: savedImages, error: imagesError } = imgRows.length > 0
-      ? await supabase.from("property_images").insert(imgRows).select("id")
-      : { data: [], error: null };
-    if (isEdit && !imagesError) {
-      const keepIds = (savedImages ?? []).map((img) => img.id);
-      let staleImages = supabase.from("property_images").delete().eq("property_id", id!);
-      if (keepIds.length > 0) staleImages = staleImages.not("id", "in", `(${keepIds.join(",")})`);
-      await staleImages;
-    }
+    // When editing, the files of photos removed in this edit are deleted too, so they don't use up storage.
+    const { error: imagesError } = await saveListingImages(
+      propertyId!,
+      images,
+      isEdit ? existingProperty?.property_images ?? [] : null
+    );
 
     // Let search engines recrawl the listing when its public page changed. A new title also changes the URL.
     const wasPublished = existingProperty?.status === "published";

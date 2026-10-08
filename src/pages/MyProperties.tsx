@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { buildPropertyUrl } from "@/lib/property-url";
 import { supabase } from "@/integrations/supabase/client";
+import { removeImageFiles } from "@/services/propertyImageService";
 import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -36,13 +37,15 @@ const MyProperties = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const handleDelete = async (propertyId: string) => {
-    // Images, amenities and views are removed by ON DELETE CASCADE in the same statement.
+  const handleDelete = async (propertyId: string, imageUrls: string[]) => {
+    // Image rows, amenities and views are removed by ON DELETE CASCADE in the same statement.
     const { error } = await supabase.from("properties").delete().eq("id", propertyId);
     if (error) {
       toast.error(t("myProperties.toasts.deleteFailed", { ns: "owner" }));
       return;
     }
+    // The photo files are not part of the database, so they are removed separately.
+    void removeImageFiles(imageUrls);
     toast.success(t("myProperties.toasts.deleteSuccess", { ns: "owner" }));
     queryClient.invalidateQueries({ queryKey: ["my-properties"] });
   };
@@ -179,7 +182,7 @@ const MyProperties = () => {
                                 <AlertDialogCancel>{t("myProperties.actions.cancel", { ns: "owner" })}</AlertDialogCancel>
                                 <AlertDialogAction
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  onClick={() => handleDelete(p.id)}
+                                  onClick={() => handleDelete(p.id, p.property_images.map((img) => img.image_url))}
                                 >
                                   {t("myProperties.actions.delete", { ns: "owner" })}
                                 </AlertDialogAction>
