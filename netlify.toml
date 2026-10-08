@@ -2,6 +2,16 @@
   command = "npm run build"
   publish = "dist"
 
+# No other site may show these pages in a frame, so a signed-in admin can't be
+# tricked into clicking buttons on a hidden copy of the dashboard.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    Content-Security-Policy = "frame-ancestors 'none'"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
 # Vite fingerprints everything in /assets, so it can be cached for a year.
 [[headers]]
   for = "/assets/*"
