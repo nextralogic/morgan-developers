@@ -649,9 +649,11 @@ CREATE POLICY "Moderators can view all properties" ON "public"."properties" FOR 
 
 CREATE POLICY "Moderators can view audit logs" ON "public"."audit_logs" FOR SELECT TO "authenticated" USING ("public"."has_role"("auth"."uid"(), 'moderator'::"public"."app_role"));
 
-CREATE POLICY "Property amenities are publicly readable" ON "public"."property_amenities" FOR SELECT USING (true);
+CREATE POLICY "Photos are visible with their listing" ON "public"."property_images" FOR SELECT USING ((EXISTS ( SELECT 1
+   FROM "public"."properties"
+  WHERE ("properties"."id" = "property_images"."property_id"))));
 
-CREATE POLICY "Public can view property images" ON "public"."property_images" FOR SELECT USING (true);
+CREATE POLICY "Property amenities are publicly readable" ON "public"."property_amenities" FOR SELECT USING (true);
 
 CREATE POLICY "Public can view published properties" ON "public"."properties" FOR SELECT USING ((("status" = 'published'::"public"."property_status") AND ("is_deleted" = false)));
 
@@ -846,16 +848,19 @@ CREATE POLICY "Admins can update property images" ON storage.objects AS PERMISSI
 CREATE POLICY "Admins can upload property images" ON storage.objects AS PERMISSIVE FOR INSERT TO public
   WITH CHECK (((bucket_id = 'property-images'::text) AND public.has_role(auth.uid(), 'admin'::public.app_role)));
 
+CREATE POLICY "Admins can view property images" ON storage.objects AS PERMISSIVE FOR SELECT TO authenticated
+  USING (((bucket_id = 'property-images'::text) AND public.has_role(auth.uid(), 'admin'::public.app_role)));
+
 CREATE POLICY "Authenticated users can upload to own folder" ON storage.objects AS PERMISSIVE FOR INSERT TO authenticated
   WITH CHECK (((bucket_id = 'property-images'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text) AND (NOT public.listing_photo_locked(name)) AND ( SELECT ((COALESCE(sum(((o.metadata ->> 'size'::text))::bigint), (0)::numeric) < (((50 * 1024) * 1024))::numeric) AND (count(*) < 500))
    FROM storage.objects o
   WHERE ((o.bucket_id = 'property-images'::text) AND (o.name ~~ ((auth.uid())::text || '/%'::text))))));
 
-CREATE POLICY "Public can view property images" ON storage.objects AS PERMISSIVE FOR SELECT TO public
-  USING ((bucket_id = 'property-images'::text));
-
 CREATE POLICY "Users can delete own storage images" ON storage.objects AS PERMISSIVE FOR DELETE TO authenticated
   USING (((bucket_id = 'property-images'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text) AND (NOT public.listing_photo_locked(name))));
+
+CREATE POLICY "Users can view own storage images" ON storage.objects AS PERMISSIVE FOR SELECT TO authenticated
+  USING (((bucket_id = 'property-images'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text)));
 
 DROP EVENT TRIGGER IF EXISTS ensure_rls;
 CREATE EVENT TRIGGER ensure_rls ON ddl_command_end

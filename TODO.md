@@ -37,7 +37,7 @@ Open items from the code audit on 2026-10-03 and the security review on 2026-10-
   1. ~~`supabase db push` (`20261008160000_second_security_review_fixes.sql`), then `npm run db:snapshot`.~~ Done 2026-10-08, after a dry run against live (25 checks, rolled back).
   2. ~~Push the site (the uploader now always makes file names the database accepts; the listing form gets length limits).~~ Done 2026-10-08, confirmed live.
   3. ~~`supabase functions delete sitemap`.~~ Done 2026-10-08. The old endpoint returns 404; `/sitemap.xml` on Netlify still lists every live listing.
-- [ ] **Roll out the photo visibility fix:** `supabase db push` (`20261008170000_hide_unpublished_listing_photos.sql`), then `npm run db:snapshot`. It passed a dry run against live on 2026-10-08 (rolled back).
+- [x] **Roll out the photo visibility fix:** `supabase db push` (`20261008170000_hide_unpublished_listing_photos.sql`), then `npm run db:snapshot`. Done 2026-10-08. Checked live: a visitor's bucket listing is empty, only live listings' photo rows are readable, and photo links still load.
 - [ ] **Delete the two old Supabase projects; both are still online.** Their public keys are in this public repo's history, and they still have the rules from before the 2026-10-08 fixes. No personal data is readable without signing in, and neither can send email.
   - Sydney (`ihvhkdfeicfemjurtham`, in this account): see Housekeeping. It holds a copy of the leads, so consider deleting it before 2026-10-17.
   - `xmcuearcjhezwdhizfys`: not in this Supabase account (likely the original Lovable project). Delete it wherever it lives.
