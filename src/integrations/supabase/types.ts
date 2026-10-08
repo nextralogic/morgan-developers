@@ -398,6 +398,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      listing_photo_locked: {
+        Args: {
+          _name: string
+        }
+        Returns: boolean
+      }
+      listing_photos_base_url: {
+        Args: never
+        Returns: string
+      }
       log_property_view: {
         Args: {
           _property_id: string

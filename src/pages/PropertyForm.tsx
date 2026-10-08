@@ -250,6 +250,7 @@ const PropertyForm = () => {
                   id="title"
                   className="mt-1.5"
                   required
+                  maxLength={200}
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   placeholder={t("propertyForm.fields.titlePlaceholder", { ns: "owner" })}
@@ -355,6 +356,7 @@ const PropertyForm = () => {
                   id="desc"
                   className="mt-1.5"
                   rows={4}
+                  maxLength={10000}
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   placeholder={t("propertyForm.fields.descriptionPlaceholder", { ns: "owner" })}

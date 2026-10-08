@@ -55,7 +55,6 @@ supabase db push
 
 ```bash
 supabase functions deploy submit-lead
-supabase functions deploy sitemap
 ```
 
 4. Set function secrets:
@@ -73,5 +72,5 @@ supabase secrets set SITE_URL=https://<your-domain-or-host>
 ## Notes
 
 - Storage bucket used by app: `property-images`
-- Sitemap endpoint: `https://<project-ref>.supabase.co/functions/v1/sitemap`
+- Sitemap: `/sitemap.xml`, served by the Netlify edge function in `netlify/edge-functions/sitemap.ts`
 - For full backend details, see `docs/backend-setup.md`.

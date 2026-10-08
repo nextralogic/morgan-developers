@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { storagePathsForImage } from "@/lib/image-url";
+import { newListingPhotoPath, storagePathsForImage } from "@/lib/image-url";
 
 const BASE = "https://gksaovhgxlxvogxsejkj.supabase.co/storage/v1/object/public/property-images";
 
@@ -22,5 +22,22 @@ describe("storagePathsForImage", () => {
     expect(storagePathsForImage("https://images.unsplash.com/photo-123?w=800")).toEqual([]);
     expect(storagePathsForImage("https://x.supabase.co/storage/v1/object/public/avatars/user-1/a.jpg")).toEqual([]);
     expect(storagePathsForImage(`${BASE}/`)).toEqual([]);
+  });
+});
+
+describe("newListingPhotoPath", () => {
+  // Same rule as the "Users can insert own property images" policy.
+  const ACCEPTED = /^user-1\/[A-Za-z0-9_-][A-Za-z0-9._-]*$/;
+
+  it("keeps a normal extension, lower-cased", () => {
+    const path = newListingPhotoPath("user-1", "House Front.JPG");
+    expect(path).toMatch(ACCEPTED);
+    expect(path.endsWith(".jpg")).toBe(true);
+  });
+
+  it("makes a name the database accepts from odd file names", () => {
+    for (const name of ["IMG 1234", "photo.we bp", "x.%2e%2e", "ফোটো.png", ".hidden"]) {
+      expect(newListingPhotoPath("user-1", name)).toMatch(ACCEPTED);
+    }
   });
 });

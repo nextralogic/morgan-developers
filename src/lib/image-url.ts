@@ -2,6 +2,16 @@ export const THUMBNAIL_WIDTH = 480;
 const THUMBNAIL_SUFFIX = "-thumb.webp";
 const LISTING_PHOTOS_PATH = "/storage/v1/object/public/property-images/";
 
+/**
+ * Storage path for a new listing photo in the owner's folder. The database only
+ * accepts photo names made of letters, digits, dots, dashes and underscores, so
+ * the extension taken from the file name is cleaned up.
+ */
+export function newListingPhotoPath(userId: string, fileName: string): string {
+  const ext = fileName.includes(".") ? fileName.split(".").pop()!.toLowerCase().replace(/[^a-z0-9]/g, "") : "";
+  return `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext || "jpg"}`;
+}
+
 /** Storage path of the thumbnail stored next to an uploaded image. */
 export function getThumbnailPath(path: string): string {
   return path.replace(/\.[a-z0-9]+$/i, "") + THUMBNAIL_SUFFIX;

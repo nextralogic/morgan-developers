@@ -49,7 +49,6 @@ npm run db:snapshot   # needs pg_dump 17+ on PATH (brew install libpq)
 
 ```bash
 supabase functions deploy submit-lead
-supabase functions deploy sitemap
 ```
 
 ### Edge Function Secrets
@@ -125,6 +124,9 @@ The `has_role()` function implements hierarchical checks:
 | audit_logs | — | — | SELECT + INSERT | SELECT + INSERT | SELECT + INSERT |
 | property_views | — (via `log_property_view`) | — (via `log_property_view`) | — (via `log_property_view`) | SELECT | SELECT |
 | amenities | SELECT | SELECT | SELECT | Full CRUD | Full CRUD |
+| locations | SELECT | SELECT | SELECT | Full CRUD | Full CRUD |
+
+Non-staff users can have at most 50 drafts and 100 photo rows per listing, and text columns have length limits. The database sets `created_at` and `view_count` itself, so API requests can't choose them.
 
 ---
 
@@ -134,9 +136,11 @@ The `has_role()` function implements hierarchical checks:
 
 - **Public:** Yes (anyone can read/view images)
 - **Max file size:** 1 MB (the app compresses photos to 200 KB before upload)
-- **Per-user allowance:** 50 MB for non-admins
+- **Per-user allowance:** 50 MB and 500 files for non-admins
 - **Allowed MIME types:** `image/jpeg`, `image/png`, `image/webp`, `image/gif`
 - **Folder structure:** `<user-uuid>/<filename>` — users upload to their own folder
+- **Owner access:** Owners can upload to and delete from their own folder, but can't overwrite a file, and can't delete or re-upload the photo or thumbnail of a listing that is no longer an active draft (`listing_photo_locked`), so approved listings keep the photos that were reviewed
+- **Photo addresses:** Owners can only save photos whose address starts with `listing_photos_base_url()`. That function holds this project's URL, so change it in a new migration if the project moves
 - **Admin access:** Admins can upload/update/delete any file in the bucket
 
 ---
@@ -146,6 +150,5 @@ The `has_role()` function implements hierarchical checks:
 | Function | Purpose | Secrets Used |
 |---|---|---|
 | `submit-lead` | Checks the enquiry form's Turnstile token, saves the lead and emails the admin. The only way a lead reaches the table. | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `TURNSTILE_SECRET_KEY`, `RESEND_API_KEY`, `FROM_EMAIL`, `ADMIN_EMAIL` |
-| `sitemap` | Generates XML sitemap of published properties | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SITE_URL` |
 
-Both functions are in `supabase/functions/` and deployable via `supabase functions deploy <name>`.
+It is in `supabase/functions/` and deployable via `supabase functions deploy submit-lead`. The sitemap is served by Netlify (`netlify/edge-functions/sitemap.ts`), not by Supabase.

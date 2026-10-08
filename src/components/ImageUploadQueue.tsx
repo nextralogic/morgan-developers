@@ -8,7 +8,7 @@ import {
   formatFileSize,
   isWithinSizeLimit,
 } from "@/lib/image-compress";
-import { getThumbnailPath, THUMBNAIL_WIDTH } from "@/lib/image-url";
+import { getThumbnailPath, newListingPhotoPath, THUMBNAIL_WIDTH } from "@/lib/image-url";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -97,8 +97,7 @@ const ImageUploadQueue = ({ userId, images, onImagesChange }: ImageUploadQueuePr
     async (item: QueuedFile) => {
       updateQueueItem(item.id, { status: "uploading" });
       const file = item.uploadFile;
-      const ext = file.name.split(".").pop();
-      const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const path = newListingPhotoPath(userId, file.name);
 
       const { error } = await supabase.storage.from("property-images").upload(path, file);
       if (error) {
