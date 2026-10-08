@@ -34,7 +34,7 @@ Open items from the code audit on 2026-10-03 and the security review on 2026-10-
   - React Router 7 (backslash open redirect; not reachable while every link target is fixed or slugified).
   - Vitest 4 (`tinypool`, test runs only) and Vite 8 (`esbuild` dev server, `npm run dev` only).
 - [ ] **Roll out the second review's fixes, in this order.**
-  1. `supabase db push` (`20261008160000_second_security_review_fixes.sql`), then `npm run db:snapshot` and commit the snapshot. It passed a dry run against live on 2026-10-08 (25 checks, rolled back).
+  1. ~~`supabase db push` (`20261008160000_second_security_review_fixes.sql`), then `npm run db:snapshot`.~~ Done 2026-10-08, after a dry run against live (25 checks, rolled back).
   2. Push the site (the uploader now always makes file names the database accepts; the listing form gets length limits).
   3. `supabase functions delete sitemap`. The site's sitemap is `/sitemap.xml` on Netlify; the old Supabase function was public, unused and ran with the service role key.
 - [ ] **Run a full Claude Security scan once Dynamic workflows are available** (`/config`). The 2026-10-08 review was done by hand, without its independent verification panel.

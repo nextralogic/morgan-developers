@@ -94,13 +94,36 @@ $$;
 
 ALTER FUNCTION "public"."guard_property_public_id"() OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."guard_property_server_fields"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+  -- API requests run as anon or authenticated. log_property_view runs as the
+  -- table owner, so it can still count views.
+  IF current_user IN ('anon', 'authenticated') THEN
+    IF TG_OP = 'INSERT' THEN
+      NEW.view_count := 0;
+      NEW.created_at := now();
+      NEW.updated_at := now();
+    ELSE
+      NEW.view_count := OLD.view_count;
+      NEW.created_at := OLD.created_at;
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+ALTER FUNCTION "public"."guard_property_server_fields"() OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
 BEGIN
   INSERT INTO public.profiles (id, full_name)
-  VALUES (NEW.id, NEW.raw_user_meta_data ->> 'full_name');
+  VALUES (NEW.id, left(NEW.raw_user_meta_data ->> 'full_name', 200));
   RETURN NEW;
 END;
 $$;
@@ -124,6 +147,76 @@ CREATE OR REPLACE FUNCTION "public"."has_role"("_user_id" "uuid", "_role" "publi
 $$;
 
 ALTER FUNCTION "public"."has_role"("_user_id" "uuid", "_role" "public"."app_role") OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."limit_listing_photos"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+  IF current_user IN ('anon', 'authenticated')
+     AND NOT public.has_role(auth.uid(), 'moderator')
+     AND EXISTS (
+       SELECT 1 FROM public.property_images pi
+       WHERE pi.property_id IN (SELECT property_id FROM new_rows)
+       GROUP BY pi.property_id
+       HAVING count(*) > 100
+     ) THEN
+    RAISE EXCEPTION 'A listing can have at most 100 photo rows';
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+ALTER FUNCTION "public"."limit_listing_photos"() OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."limit_owner_drafts"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+  IF current_user IN ('anon', 'authenticated')
+     AND NOT public.has_role(auth.uid(), 'moderator')
+     AND EXISTS (
+       SELECT 1 FROM public.properties p
+       WHERE p.created_by IN (SELECT created_by FROM new_rows) AND p.status = 'draft'
+       GROUP BY p.created_by
+       HAVING count(*) > 50
+     ) THEN
+    RAISE EXCEPTION 'An owner can have at most 50 draft listings';
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+ALTER FUNCTION "public"."limit_owner_drafts"() OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."listing_photo_locked"("_name" "text") RETURNS boolean
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $_$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.property_images pi
+    JOIN public.properties p ON p.id = pi.property_id
+    CROSS JOIN LATERAL (
+      SELECT split_part(pi.image_url, '/storage/v1/object/public/property-images/', 2) AS path
+    ) f
+    WHERE NOT (p.status = 'draft' AND p.is_deleted = false)
+      AND f.path <> ''
+      AND _name IN (f.path, regexp_replace(f.path, '\.[a-z0-9]+$', '', 'i') || '-thumb.webp')
+  )
+$_$;
+
+ALTER FUNCTION "public"."listing_photo_locked"("_name" "text") OWNER TO "postgres";
+
+CREATE OR REPLACE FUNCTION "public"."listing_photos_base_url"() RETURNS "text"
+    LANGUAGE "sql" IMMUTABLE
+    SET "search_path" TO 'public'
+    AS $$
+  SELECT 'https://gksaovhgxlxvogxsejkj.supabase.co/storage/v1/object/public/property-images/'::text
+$$;
+
+ALTER FUNCTION "public"."listing_photos_base_url"() OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."log_property_view"("_property_id" "uuid", "_session_id" "text" DEFAULT NULL::"text", "_user_id" "uuid" DEFAULT NULL::"uuid", "_user_agent" "text" DEFAULT NULL::"text") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
@@ -288,7 +381,10 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
     "full_name" "text",
     "phone" "text",
     "avatar_url" "text",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "profiles_avatar_url_length" CHECK (("char_length"("avatar_url") <= 2048)),
+    CONSTRAINT "profiles_full_name_length" CHECK (("char_length"("full_name") <= 200)),
+    CONSTRAINT "profiles_phone_length" CHECK (("char_length"("phone") <= 40))
 );
 
 ALTER TABLE "public"."profiles" OWNER TO "postgres";
@@ -320,7 +416,13 @@ CREATE TABLE IF NOT EXISTS "public"."properties" (
     "view_count" bigint DEFAULT 0 NOT NULL,
     "is_deleted" boolean DEFAULT false NOT NULL,
     CONSTRAINT "chk_properties_area_positive" CHECK ((("area_sqft" IS NULL) OR ("area_sqft" > (0)::numeric))),
-    CONSTRAINT "chk_properties_price_non_negative" CHECK (("price" >= (0)::numeric))
+    CONSTRAINT "chk_properties_price_non_negative" CHECK (("price" >= (0)::numeric)),
+    CONSTRAINT "properties_area_sqft_size" CHECK ((("area_sqft" < '1000000000000000'::numeric) AND ("scale"("area_sqft") <= 30))),
+    CONSTRAINT "properties_area_unit_length" CHECK (("char_length"("area_unit") <= 20)),
+    CONSTRAINT "properties_area_value_size" CHECK ((("area_value" < '1000000000000'::numeric) AND ("scale"("area_value") <= 30))),
+    CONSTRAINT "properties_description_length" CHECK (("char_length"("description") <= 10000)),
+    CONSTRAINT "properties_price_size" CHECK ((("price" < '10000000000000'::numeric) AND ("scale"("price") <= 30))),
+    CONSTRAINT "properties_title_length" CHECK (("char_length"("title") <= 200))
 );
 
 ALTER TABLE "public"."properties" OWNER TO "postgres";
@@ -338,7 +440,8 @@ CREATE TABLE IF NOT EXISTS "public"."property_images" (
     "image_url" "text" NOT NULL,
     "display_order" integer DEFAULT 0 NOT NULL,
     "is_primary" boolean DEFAULT false NOT NULL,
-    CONSTRAINT "chk_images_display_order_non_negative" CHECK (("display_order" >= 0))
+    CONSTRAINT "chk_images_display_order_non_negative" CHECK (("display_order" >= 0)),
+    CONSTRAINT "property_images_image_url_length" CHECK (("char_length"("image_url") <= 2048))
 );
 
 ALTER TABLE "public"."property_images" OWNER TO "postgres";
@@ -469,6 +572,12 @@ CREATE UNIQUE INDEX "locations_address_unique" ON "public"."locations" USING "bt
 
 CREATE OR REPLACE TRIGGER "guard_property_public_id" BEFORE INSERT OR UPDATE OF "property_public_id" ON "public"."properties" FOR EACH ROW EXECUTE FUNCTION "public"."guard_property_public_id"();
 
+CREATE OR REPLACE TRIGGER "guard_property_server_fields" BEFORE INSERT OR UPDATE ON "public"."properties" FOR EACH ROW EXECUTE FUNCTION "public"."guard_property_server_fields"();
+
+CREATE OR REPLACE TRIGGER "limit_listing_photos" AFTER INSERT ON "public"."property_images" REFERENCING NEW TABLE AS "new_rows" FOR EACH STATEMENT EXECUTE FUNCTION "public"."limit_listing_photos"();
+
+CREATE OR REPLACE TRIGGER "limit_owner_drafts" AFTER INSERT ON "public"."properties" REFERENCING NEW TABLE AS "new_rows" FOR EACH STATEMENT EXECUTE FUNCTION "public"."limit_owner_drafts"();
+
 CREATE OR REPLACE TRIGGER "update_leads_updated_at" BEFORE UPDATE ON "public"."leads" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
 
 CREATE OR REPLACE TRIGGER "update_properties_updated_at" BEFORE UPDATE ON "public"."properties" FOR EACH ROW EXECUTE FUNCTION "public"."update_properties_updated_at"();
@@ -532,8 +641,6 @@ CREATE POLICY "Admins can view leads" ON "public"."leads" FOR SELECT TO "authent
 
 CREATE POLICY "Amenities are publicly readable" ON "public"."amenities" FOR SELECT USING (true);
 
-CREATE POLICY "Authenticated users can create locations" ON "public"."locations" FOR INSERT TO "authenticated" WITH CHECK ((("char_length"(TRIM(BOTH FROM COALESCE("province", ''::"text"))) > 0) AND ("char_length"(TRIM(BOTH FROM COALESCE("district", ''::"text"))) > 0) AND ("char_length"(TRIM(BOTH FROM COALESCE("municipality_or_city", ''::"text"))) > 0)));
-
 CREATE POLICY "Locations are publicly readable" ON "public"."locations" FOR SELECT USING (true);
 
 CREATE POLICY "Moderators can update properties" ON "public"."properties" FOR UPDATE TO "authenticated" USING ("public"."has_role"("auth"."uid"(), 'moderator'::"public"."app_role")) WITH CHECK ("public"."has_role"("auth"."uid"(), 'moderator'::"public"."app_role"));
@@ -570,19 +677,13 @@ CREATE POLICY "Users can insert own property amenities" ON "public"."property_am
    FROM "public"."properties"
   WHERE (("properties"."id" = "property_amenities"."property_id") AND ("properties"."created_by" = "auth"."uid"()) AND ("properties"."status" = 'draft'::"public"."property_status") AND ("properties"."is_deleted" = false)))));
 
-CREATE POLICY "Users can insert own property images" ON "public"."property_images" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
+CREATE POLICY "Users can insert own property images" ON "public"."property_images" FOR INSERT TO "authenticated" WITH CHECK (("starts_with"("image_url", "public"."listing_photos_base_url"()) AND ("substr"("image_url", ("char_length"("public"."listing_photos_base_url"()) + 1)) ~ '^[0-9a-f-]{36}/[A-Za-z0-9_-][A-Za-z0-9._-]*$'::"text") AND (EXISTS ( SELECT 1
    FROM "public"."properties"
-  WHERE (("properties"."id" = "property_images"."property_id") AND ("properties"."created_by" = "auth"."uid"()) AND ("properties"."status" = 'draft'::"public"."property_status") AND ("properties"."is_deleted" = false)))));
+  WHERE (("properties"."id" = "property_images"."property_id") AND ("properties"."created_by" = "auth"."uid"()) AND ("properties"."status" = 'draft'::"public"."property_status") AND ("properties"."is_deleted" = false))))));
 
 CREATE POLICY "Users can update own draft properties" ON "public"."properties" FOR UPDATE TO "authenticated" USING ((("auth"."uid"() = "created_by") AND ("status" = 'draft'::"public"."property_status") AND ("is_deleted" = false))) WITH CHECK ((("auth"."uid"() = "created_by") AND ("status" = 'draft'::"public"."property_status") AND ("is_deleted" = false)));
 
 CREATE POLICY "Users can update own profile" ON "public"."profiles" FOR UPDATE USING (("auth"."uid"() = "id"));
-
-CREATE POLICY "Users can update own property images" ON "public"."property_images" FOR UPDATE TO "authenticated" USING ((EXISTS ( SELECT 1
-   FROM "public"."properties"
-  WHERE (("properties"."id" = "property_images"."property_id") AND ("properties"."created_by" = "auth"."uid"()) AND ("properties"."status" = 'draft'::"public"."property_status") AND ("properties"."is_deleted" = false))))) WITH CHECK ((EXISTS ( SELECT 1
-   FROM "public"."properties"
-  WHERE (("properties"."id" = "property_images"."property_id") AND ("properties"."created_by" = "auth"."uid"()) AND ("properties"."status" = 'draft'::"public"."property_status") AND ("properties"."is_deleted" = false)))));
 
 CREATE POLICY "Users can view own profile" ON "public"."profiles" FOR SELECT USING (("auth"."uid"() = "id"));
 
@@ -619,6 +720,10 @@ GRANT ALL ON FUNCTION "public"."guard_property_public_id"() TO "anon";
 GRANT ALL ON FUNCTION "public"."guard_property_public_id"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."guard_property_public_id"() TO "service_role";
 
+GRANT ALL ON FUNCTION "public"."guard_property_server_fields"() TO "anon";
+GRANT ALL ON FUNCTION "public"."guard_property_server_fields"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."guard_property_server_fields"() TO "service_role";
+
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "anon";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
@@ -626,6 +731,22 @@ GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
 GRANT ALL ON FUNCTION "public"."has_role"("_user_id" "uuid", "_role" "public"."app_role") TO "anon";
 GRANT ALL ON FUNCTION "public"."has_role"("_user_id" "uuid", "_role" "public"."app_role") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."has_role"("_user_id" "uuid", "_role" "public"."app_role") TO "service_role";
+
+GRANT ALL ON FUNCTION "public"."limit_listing_photos"() TO "anon";
+GRANT ALL ON FUNCTION "public"."limit_listing_photos"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."limit_listing_photos"() TO "service_role";
+
+GRANT ALL ON FUNCTION "public"."limit_owner_drafts"() TO "anon";
+GRANT ALL ON FUNCTION "public"."limit_owner_drafts"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."limit_owner_drafts"() TO "service_role";
+
+REVOKE ALL ON FUNCTION "public"."listing_photo_locked"("_name" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."listing_photo_locked"("_name" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."listing_photo_locked"("_name" "text") TO "service_role";
+
+GRANT ALL ON FUNCTION "public"."listing_photos_base_url"() TO "anon";
+GRANT ALL ON FUNCTION "public"."listing_photos_base_url"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."listing_photos_base_url"() TO "service_role";
 
 GRANT ALL ON FUNCTION "public"."log_property_view"("_property_id" "uuid", "_session_id" "text", "_user_id" "uuid", "_user_agent" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."log_property_view"("_property_id" "uuid", "_session_id" "text", "_user_id" "uuid", "_user_agent" "text") TO "authenticated";
@@ -726,18 +847,15 @@ CREATE POLICY "Admins can upload property images" ON storage.objects AS PERMISSI
   WITH CHECK (((bucket_id = 'property-images'::text) AND public.has_role(auth.uid(), 'admin'::public.app_role)));
 
 CREATE POLICY "Authenticated users can upload to own folder" ON storage.objects AS PERMISSIVE FOR INSERT TO authenticated
-  WITH CHECK (((bucket_id = 'property-images'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text) AND (( SELECT COALESCE(sum(((o.metadata ->> 'size'::text))::bigint), (0)::numeric) AS "coalesce"
+  WITH CHECK (((bucket_id = 'property-images'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text) AND (NOT public.listing_photo_locked(name)) AND ( SELECT ((COALESCE(sum(((o.metadata ->> 'size'::text))::bigint), (0)::numeric) < (((50 * 1024) * 1024))::numeric) AND (count(*) < 500))
    FROM storage.objects o
-  WHERE ((o.bucket_id = 'property-images'::text) AND (o.name ~~ ((auth.uid())::text || '/%'::text)))) < (((50 * 1024) * 1024))::numeric)));
+  WHERE ((o.bucket_id = 'property-images'::text) AND (o.name ~~ ((auth.uid())::text || '/%'::text))))));
 
 CREATE POLICY "Public can view property images" ON storage.objects AS PERMISSIVE FOR SELECT TO public
   USING ((bucket_id = 'property-images'::text));
 
 CREATE POLICY "Users can delete own storage images" ON storage.objects AS PERMISSIVE FOR DELETE TO authenticated
-  USING (((bucket_id = 'property-images'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text)));
-
-CREATE POLICY "Users can update own storage images" ON storage.objects AS PERMISSIVE FOR UPDATE TO authenticated
-  USING (((bucket_id = 'property-images'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text)));
+  USING (((bucket_id = 'property-images'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text) AND (NOT public.listing_photo_locked(name))));
 
 DROP EVENT TRIGGER IF EXISTS ensure_rls;
 CREATE EVENT TRIGGER ensure_rls ON ddl_command_end
