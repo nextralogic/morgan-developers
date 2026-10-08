@@ -7,6 +7,26 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const escapeHtml = (text: string) => String(text).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+// Every value comes from the public enquiry form, so all of it is escaped.
+function leadEmailHtml(summary: Record<string, string>): string {
+  const rows = [
+    ["Property", summary.property],
+    ["Name", summary.name],
+    ["Email", summary.email],
+    ["Phone", summary.phone],
+    ["Budget", summary.budget],
+    ["Preferred time", summary.preferred_time],
+  ].map(([label, value]) => `<p><strong>${label}:</strong> ${escapeHtml(value)}</p>`);
+  if (summary.message) {
+    rows.push(`<p><strong>Message:</strong></p><p style="white-space:pre-wrap">${escapeHtml(summary.message)}</p>`);
+  }
+  return `<h2>${escapeHtml(summary.subject)}</h2>
+${rows.join("\n")}
+<p><a href="https://morgandevelopers.com/admin">Open the admin dashboard</a></p>`;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -58,25 +78,32 @@ serve(async (req) => {
       created_at: lead.created_at,
     };
 
-    // Log the notification (admin email sending can be wired up here)
-    // To enable email: add ADMIN_EMAIL and FROM_EMAIL secrets, then integrate with
-    // a mail provider (e.g. Resend) using the pattern below:
-    //
-    // const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-    // await resend.emails.send({
-    //   from: Deno.env.get("FROM_EMAIL") || "noreply@morgandevelopers.com",
-    //   to: [Deno.env.get("ADMIN_EMAIL") || "leads@morgandevelopers.com"],
-    //   subject: summary.subject,
-    //   html: `<h2>${summary.subject}</h2>
-    //     <p><strong>Name:</strong> ${summary.name}</p>
-    //     <p><strong>Email:</strong> ${summary.email}</p>
-    //     <p><strong>Phone:</strong> ${summary.phone}</p>
-    //     <p><strong>Budget:</strong> ${summary.budget}</p>
-    //     <p><strong>Preferred Time:</strong> ${summary.preferred_time}</p>
-    //     <p><strong>Message:</strong> ${summary.message}</p>`,
-    // });
-
-    console.log("Lead notification:", JSON.stringify(summary));
+    // Emails the admin through Resend when the RESEND_API_KEY, FROM_EMAIL and ADMIN_EMAIL
+    // secrets are set; otherwise the lead is only logged.
+    const resendKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendKey) {
+      console.log("Lead notification:", JSON.stringify(summary));
+    } else {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: Deno.env.get("FROM_EMAIL"),
+          to: [Deno.env.get("ADMIN_EMAIL")],
+          reply_to: summary.email,
+          subject: summary.subject,
+          html: leadEmailHtml(summary),
+        }),
+      });
+      if (!res.ok) {
+        console.error("Lead email failed:", res.status, await res.text());
+        return new Response(JSON.stringify({ error: "Email failed" }), {
+          status: 502,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      console.log("Lead email sent:", lead_id);
+    }
 
     // Anyone holding the public anon key can call this function, so the lead's details are not echoed back.
     return new Response(JSON.stringify({ ok: true }), {
