@@ -23,8 +23,8 @@ Open items from the code audit on 2026-10-03 and the security review on 2026-10-
   7. ~~Add Cloudflare Turnstile to the privacy policy (`src/lib/privacy-policy.ts`).~~ Done 2026-10-08, along with Resend.
 - [ ] **Send one test lead after Resend is set up** and confirm exactly one email arrives.
 - [ ] **Review the Supabase Auth settings** (dashboard → Authentication). The CLI can't read them, so they weren't part of the review.
-  1. Email provider: "Confirm email" is on, so nobody can sign up with someone else's address.
-  2. URL Configuration: the Site URL is `https://morgandevelopers.com`, and Redirect URLs list only our own domains, without broad wildcards. Google sign-in and password resets only redirect to these.
+  1. ~~Email provider: "Confirm email" is on, so nobody can sign up with someone else's address.~~ Checked 2026-10-08 through the public `/auth/v1/settings` endpoint: confirmation is required.
+  2. URL Configuration: the Site URL is `https://morgandevelopers.com`, and Redirect URLs list only our own domains, without broad wildcards. Tested 2026-10-08: sign-in refuses outside addresses (including look-alikes such as `morgandevelopers.com.evil.example`) but still accepts `http://localhost:8080`. Remove that entry unless you develop locally against this project.
   3. Minimum password length: the forms ask for 6. Consider 8, and update the forms' `minLength` to match.
   4. Rate limits for sign-ups and emails are on (the default).
   5. Run the Security Advisor (Database → Advisors) once. On 2026-10-08 the same checks run by hand found nothing: every table has RLS, every function has a fixed `search_path`, and no write policy is always true.
@@ -37,6 +37,10 @@ Open items from the code audit on 2026-10-03 and the security review on 2026-10-
   1. ~~`supabase db push` (`20261008160000_second_security_review_fixes.sql`), then `npm run db:snapshot`.~~ Done 2026-10-08, after a dry run against live (25 checks, rolled back).
   2. ~~Push the site (the uploader now always makes file names the database accepts; the listing form gets length limits).~~ Done 2026-10-08, confirmed live.
   3. ~~`supabase functions delete sitemap`.~~ Done 2026-10-08. The old endpoint returns 404; `/sitemap.xml` on Netlify still lists every live listing.
+- [ ] **Roll out the photo visibility fix:** `supabase db push` (`20261008170000_hide_unpublished_listing_photos.sql`), then `npm run db:snapshot`. It passed a dry run against live on 2026-10-08 (rolled back).
+- [ ] **Delete the two old Supabase projects; both are still online.** Their public keys are in this public repo's history, and they still have the rules from before the 2026-10-08 fixes. No personal data is readable without signing in, and neither can send email.
+  - Sydney (`ihvhkdfeicfemjurtham`, in this account): see Housekeeping. It holds a copy of the leads, so consider deleting it before 2026-10-17.
+  - `xmcuearcjhezwdhizfys`: not in this Supabase account (likely the original Lovable project). Delete it wherever it lives.
 - [ ] **Run a full Claude Security scan once Dynamic workflows are available** (`/config`). The 2026-10-08 review was done by hand, without its independent verification panel.
 
 ## Done
@@ -56,6 +60,7 @@ Open items from the code audit on 2026-10-03 and the security review on 2026-10-
   - Owners can't delete, overwrite or re-upload the photo or thumbnail files of a listing that is no longer an active draft, and can only save photos stored in this project's bucket. Before, they could swap the pictures on an approved listing without review.
   - The database sets `created_at` and `view_count` itself, so owners can't push a listing to the top of the latest or most-viewed lists.
   - Size limits against filling the free 500 MB database: listing title 200 and description 10,000 characters, bounded prices and areas, profile fields, 50 drafts per owner, 100 photo rows per listing, 500 files per user. Only admins can add locations.
+- [x] **Hid photos of listings that aren't live** (2026-10-08, migration `20261008170000`). Visitors could list every file in the photo bucket and read the photo rows of drafts and archived listings. Now a photo row is visible only with its listing, and only owners (own folder) and admins can list files. Photo links still work.
 - [x] **Photo files are removed when a photo or listing is deleted** (2026-10-08, commit `1c2916c`). The 26 orphaned files were deleted, and both paths were tested live. Photos uploaded on a form that is never saved are not cleaned up.
 - [x] **Regenerated `supabase/schema_snapshot.sql` from the live database** (2026-10-03).
   - The old hand-written file was 298 items out of date. A database built from it could not delete properties, because the foreign keys lacked `ON DELETE CASCADE`.

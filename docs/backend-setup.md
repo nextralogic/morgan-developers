@@ -134,7 +134,7 @@ Non-staff users can have at most 50 drafts and 100 photo rows per listing, and t
 
 ### Bucket: `property-images`
 
-- **Public:** Yes (anyone can read/view images)
+- **Public:** Yes: anyone with a photo's link can view it, but only the owner (their own folder) and admins can list files
 - **Max file size:** 1 MB (the app compresses photos to 200 KB before upload)
 - **Per-user allowance:** 50 MB and 500 files for non-admins
 - **Allowed MIME types:** `image/jpeg`, `image/png`, `image/webp`, `image/gif`
