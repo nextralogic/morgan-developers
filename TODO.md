@@ -14,9 +14,9 @@ Open items from the code audit on 2026-10-03 and the security review on 2026-10-
 ## Security (from the 2026-10-08 review)
 
 - [ ] **Roll out the enquiry-form CAPTCHA, in this order.** Enquiries now go through the `submit-lead` edge function, which checks a Cloudflare Turnstile token before saving. Until both keys are set, it runs without the check.
-  1. `supabase functions deploy submit-lead`.
-  2. Push the site so the form calls `submit-lead`, and wait for Netlify to finish.
-  3. `supabase db push` (`20261008150000_leads_only_through_submit_lead.sql`), then `npm run db:snapshot`. This removes direct inserts into `leads`, so it must come after step 2.
+  1. ~~`supabase functions deploy submit-lead`.~~ Done 2026-10-08.
+  2. ~~Push the site so the form calls `submit-lead`, and wait for Netlify to finish.~~ Done 2026-10-08.
+  3. ~~`supabase db push` (`20261008150000_leads_only_through_submit_lead.sql`), then `npm run db:snapshot`.~~ Done 2026-10-08. A direct insert with the public key is now refused.
   4. `supabase functions delete lead-notification`.
   5. In Cloudflare, add a Turnstile widget for `morgandevelopers.com`. Set `VITE_TURNSTILE_SITE_KEY` in Netlify's environment and redeploy.
   6. Only then set the secret: `supabase secrets set TURNSTILE_SECRET_KEY=...`. Once it's set, enquiries without a valid token are refused.

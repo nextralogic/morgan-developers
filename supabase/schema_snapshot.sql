@@ -257,7 +257,13 @@ CREATE TABLE IF NOT EXISTS "public"."leads" (
     "notes" "text",
     "handled_by" "uuid",
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "notified_at" timestamp with time zone
+    "notified_at" timestamp with time zone,
+    CONSTRAINT "leads_budget_range_length" CHECK (("char_length"("budget_range") <= 100)),
+    CONSTRAINT "leads_email_length" CHECK (("char_length"("email") <= 254)),
+    CONSTRAINT "leads_message_length" CHECK (("char_length"("message") <= 5000)),
+    CONSTRAINT "leads_name_length" CHECK (("char_length"("name") <= 200)),
+    CONSTRAINT "leads_phone_length" CHECK (("char_length"("phone") <= 40)),
+    CONSTRAINT "leads_preferred_contact_time_length" CHECK (("char_length"("preferred_contact_time") <= 50))
 );
 
 ALTER TABLE "public"."leads" OWNER TO "postgres";
@@ -525,8 +531,6 @@ CREATE POLICY "Admins can view audit logs" ON "public"."audit_logs" FOR SELECT T
 CREATE POLICY "Admins can view leads" ON "public"."leads" FOR SELECT TO "authenticated" USING ("public"."has_role"("auth"."uid"(), 'admin'::"public"."app_role"));
 
 CREATE POLICY "Amenities are publicly readable" ON "public"."amenities" FOR SELECT USING (true);
-
-CREATE POLICY "Anyone can submit a lead" ON "public"."leads" FOR INSERT TO "authenticated", "anon" WITH CHECK ((("char_length"(TRIM(BOTH FROM "name")) > 0) AND ("char_length"("name") <= 200) AND ("char_length"(TRIM(BOTH FROM "email")) > 2) AND ("char_length"("email") <= 254) AND ("email" ~* '^[^@]+@[^@]+\.[^@]+$'::"text") AND (COALESCE("char_length"("phone"), 0) <= 40) AND (COALESCE("char_length"("message"), 0) <= 5000) AND (COALESCE("char_length"("budget_range"), 0) <= 100) AND (COALESCE("char_length"("preferred_contact_time"), 0) <= 50) AND ("status" = 'new'::"public"."lead_status") AND ("notes" IS NULL) AND ("handled_by" IS NULL) AND ("notified_at" IS NULL)));
 
 CREATE POLICY "Authenticated users can create locations" ON "public"."locations" FOR INSERT TO "authenticated" WITH CHECK ((("char_length"(TRIM(BOTH FROM COALESCE("province", ''::"text"))) > 0) AND ("char_length"(TRIM(BOTH FROM COALESCE("district", ''::"text"))) > 0) AND ("char_length"(TRIM(BOTH FROM COALESCE("municipality_or_city", ''::"text"))) > 0)));
 
