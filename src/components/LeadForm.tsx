@@ -64,21 +64,21 @@ const LeadForm = ({ propertyId }: LeadFormProps) => {
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="lead-name">{t("form.fullNameLabel")}</Label>
-          <Input id="lead-name" className="mt-1.5" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={t("form.fullNamePlaceholder")} />
+          <Input id="lead-name" className="mt-1.5" required maxLength={200} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={t("form.fullNamePlaceholder")} />
         </div>
         <div>
           <Label htmlFor="lead-email">{t("form.emailLabel")}</Label>
-          <Input id="lead-email" className="mt-1.5" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder={t("form.emailPlaceholder")} />
+          <Input id="lead-email" className="mt-1.5" type="email" required maxLength={254} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder={t("form.emailPlaceholder")} />
         </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="lead-phone">{t("form.phoneLabel")}</Label>
-          <Input id="lead-phone" className="mt-1.5" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder={t("form.phonePlaceholder")} />
+          <Input id="lead-phone" className="mt-1.5" maxLength={40} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder={t("form.phonePlaceholder")} />
         </div>
         <div>
           <Label htmlFor="lead-budget">{t("form.budgetLabel")}</Label>
-          <Input id="lead-budget" className="mt-1.5" placeholder={t("form.budgetPlaceholder")} value={form.budget_range} onChange={(e) => setForm({ ...form, budget_range: e.target.value })} />
+          <Input id="lead-budget" className="mt-1.5" maxLength={100} placeholder={t("form.budgetPlaceholder")} value={form.budget_range} onChange={(e) => setForm({ ...form, budget_range: e.target.value })} />
         </div>
       </div>
       <div>
@@ -96,7 +96,7 @@ const LeadForm = ({ propertyId }: LeadFormProps) => {
       </div>
       <div>
         <Label htmlFor="lead-message">{t("form.messageLabel")}</Label>
-        <Textarea id="lead-message" className="mt-1.5" rows={3} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder={t("form.messagePlaceholder")} />
+        <Textarea id="lead-message" className="mt-1.5" rows={3} maxLength={5000} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder={t("form.messagePlaceholder")} />
       </div>
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? t("form.submitting") : t("form.submit")}
