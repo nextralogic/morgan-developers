@@ -43,7 +43,7 @@ const ResetPassword = () => {
       toast.error(t("reset.errors.passwordMismatch"));
       return;
     }
-    if (password.length < 6) {
+    if (password.length < 8) {
       toast.error(t("reset.errors.passwordTooShort"));
       return;
     }
@@ -76,11 +76,11 @@ const ResetPassword = () => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <Label htmlFor="password">{t("reset.newPasswordLabel")}</Label>
-                  <Input id="password" className="mt-1.5" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t("reset.passwordPlaceholder")} />
+                  <Input id="password" className="mt-1.5" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t("reset.passwordPlaceholder")} />
                 </div>
                 <div>
                   <Label htmlFor="confirm">{t("reset.confirmPasswordLabel")}</Label>
-                  <Input id="confirm" className="mt-1.5" type="password" required minLength={6} value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder={t("reset.passwordPlaceholder")} />
+                  <Input id="confirm" className="mt-1.5" type="password" required minLength={8} value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder={t("reset.passwordPlaceholder")} />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? t("reset.submitting") : t("reset.submit")}

@@ -92,7 +92,7 @@ const Signup = () => {
               </div>
               <div>
                 <Label htmlFor="password">{t("signup.passwordLabel")}</Label>
-                <Input id="password" className="mt-1.5" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t("signup.passwordPlaceholder")} />
+                <Input id="password" className="mt-1.5" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t("signup.passwordPlaceholder")} />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? t("signup.submitting") : t("signup.submit")}
