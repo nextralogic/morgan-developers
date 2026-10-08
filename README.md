@@ -54,7 +54,7 @@ supabase db push
 3. Deploy functions:
 
 ```bash
-supabase functions deploy lead-notification
+supabase functions deploy submit-lead
 supabase functions deploy sitemap
 ```
 
@@ -62,6 +62,10 @@ supabase functions deploy sitemap
 
 ```bash
 supabase secrets set SITE_URL=https://<your-domain-or-host>
+# Enquiry form CAPTCHA (pair with VITE_TURNSTILE_SITE_KEY in the site's environment):
+# supabase secrets set TURNSTILE_SECRET_KEY=<turnstile-secret-key>
+# Lead alert emails through Resend:
+# supabase secrets set RESEND_API_KEY=re_xxx FROM_EMAIL=noreply@yourdomain.com ADMIN_EMAIL=admin@yourdomain.com
 ```
 
 `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are reserved and provided automatically by Supabase in hosted Edge Functions.

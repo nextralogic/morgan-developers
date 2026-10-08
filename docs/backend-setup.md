@@ -48,7 +48,7 @@ npm run db:snapshot   # needs pg_dump 17+ on PATH (brew install libpq)
 ## 3. Deploy Edge Functions
 
 ```bash
-supabase functions deploy lead-notification
+supabase functions deploy submit-lead
 supabase functions deploy sitemap
 ```
 
@@ -62,10 +62,13 @@ Set only your custom secrets:
 
 ```bash
 supabase secrets set SITE_URL=https://<your-domain-or-host>
-# Optional (for email notifications):
+# Enquiry form CAPTCHA (Cloudflare Turnstile). Set VITE_TURNSTILE_SITE_KEY on the site first,
+# because once this secret is set, enquiries without a valid token are refused:
+# supabase secrets set TURNSTILE_SECRET_KEY=<turnstile-secret-key>
+# Lead alert emails through Resend:
 # supabase secrets set RESEND_API_KEY=re_xxx
-# supabase secrets set EMAIL_FROM=noreply@yourdomain.com
-# supabase secrets set EMAIL_ADMIN_TO=admin@yourdomain.com
+# supabase secrets set FROM_EMAIL=noreply@yourdomain.com
+# supabase secrets set ADMIN_EMAIL=admin@yourdomain.com
 ```
 
 ---
@@ -116,11 +119,11 @@ The `has_role()` function implements hierarchical checks:
 | Table | Public | Buyer | Moderator | Admin | Super Admin |
 |---|---|---|---|---|---|
 | properties | SELECT published | CRUD own drafts | SELECT all, UPDATE status | Full CRUD | Full CRUD |
-| leads | INSERT only | INSERT only | SELECT, UPDATE | Full CRUD | Full CRUD |
+| leads | — (via `submit-lead`) | — (via `submit-lead`) | — | Full CRUD | Full CRUD |
 | profiles | — | Own profile | SELECT all | SELECT all | SELECT all |
 | user_roles | — | Own roles (read) | Own roles (read) | Own roles (read) | Full CRUD |
-| audit_logs | — | — | SELECT | SELECT | SELECT |
-| property_views | INSERT | INSERT | INSERT | SELECT + INSERT | SELECT + INSERT |
+| audit_logs | — | — | SELECT + INSERT | SELECT + INSERT | SELECT + INSERT |
+| property_views | — (via `log_property_view`) | — (via `log_property_view`) | — (via `log_property_view`) | SELECT | SELECT |
 | amenities | SELECT | SELECT | SELECT | Full CRUD | Full CRUD |
 
 ---
@@ -130,7 +133,8 @@ The `has_role()` function implements hierarchical checks:
 ### Bucket: `property-images`
 
 - **Public:** Yes (anyone can read/view images)
-- **Max file size:** 5 MB
+- **Max file size:** 1 MB (the app compresses photos to 200 KB before upload)
+- **Per-user allowance:** 50 MB for non-admins
 - **Allowed MIME types:** `image/jpeg`, `image/png`, `image/webp`, `image/gif`
 - **Folder structure:** `<user-uuid>/<filename>` — users upload to their own folder
 - **Admin access:** Admins can upload/update/delete any file in the bucket
@@ -141,7 +145,7 @@ The `has_role()` function implements hierarchical checks:
 
 | Function | Purpose | Secrets Used |
 |---|---|---|
-| `lead-notification` | Builds notification summary when a lead is created | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
+| `submit-lead` | Checks the enquiry form's Turnstile token, saves the lead and emails the admin. The only way a lead reaches the table. | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `TURNSTILE_SECRET_KEY`, `RESEND_API_KEY`, `FROM_EMAIL`, `ADMIN_EMAIL` |
 | `sitemap` | Generates XML sitemap of published properties | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SITE_URL` |
 
 Both functions are in `supabase/functions/` and deployable via `supabase functions deploy <name>`.

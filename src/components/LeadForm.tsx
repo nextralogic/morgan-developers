@@ -5,6 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createLead } from "@/services/leadService";
+import TurnstileWidget from "@/components/TurnstileWidget";
+import { TURNSTILE_SITE_KEY } from "@/lib/turnstile";
 import { toast } from "sonner";
 import { CheckCircle2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -25,6 +27,9 @@ const LeadForm = ({ propertyId }: LeadFormProps) => {
     budget_range: "",
     preferred_contact_time: "",
   });
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  // Turnstile tokens are single use, so the widget is remounted after every attempt.
+  const [captchaKey, setCaptchaKey] = useState(0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +38,7 @@ const LeadForm = ({ propertyId }: LeadFormProps) => {
       await createLead({
         ...form,
         property_id: propertyId || null,
+        turnstile_token: captchaToken,
       });
       setSubmitted(true);
       toast.success(t("toast.success"));
@@ -41,6 +47,8 @@ const LeadForm = ({ propertyId }: LeadFormProps) => {
       toast.error(t("toast.error"));
     } finally {
       setLoading(false);
+      setCaptchaToken(null);
+      setCaptchaKey((key) => key + 1);
     }
   };
 
@@ -98,7 +106,8 @@ const LeadForm = ({ propertyId }: LeadFormProps) => {
         <Label htmlFor="lead-message">{t("form.messageLabel")}</Label>
         <Textarea id="lead-message" className="mt-1.5" rows={3} maxLength={5000} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder={t("form.messagePlaceholder")} />
       </div>
-      <Button type="submit" className="w-full" disabled={loading}>
+      <TurnstileWidget key={captchaKey} onToken={setCaptchaToken} />
+      <Button type="submit" className="w-full" disabled={loading || (Boolean(TURNSTILE_SITE_KEY) && !captchaToken)}>
         {loading ? t("form.submitting") : t("form.submit")}
       </Button>
     </form>

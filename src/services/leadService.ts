@@ -115,7 +115,8 @@ export async function updateLeadStatus(
 
 /* ------------------------------------------------------------------ */
 /*  Public: create a lead (called from LeadForm)                       */
-/*  Also fires the notification edge function best-effort.             */
+/*  The submit-lead edge function checks the CAPTCHA token, saves the  */
+/*  lead and emails the admin; the table takes no direct inserts.      */
 /* ------------------------------------------------------------------ */
 
 export async function createLead(payload: {
@@ -126,26 +127,9 @@ export async function createLead(payload: {
   budget_range?: string;
   preferred_contact_time?: string;
   property_id?: string | null;
+  turnstile_token: string | null;
 }) {
-  const leadId = crypto.randomUUID();
-
-  const { error } = await supabase
-    .from("leads")
-    .insert({
-      id: leadId,
-      ...payload,
-      property_id: payload.property_id || null,
-      source: "website" as const,
-    });
-
+  // invoke() reports failures in `error` rather than throwing.
+  const { error } = await supabase.functions.invoke("submit-lead", { body: payload });
   if (error) throw error;
-
-  // Best-effort: fire notification edge function. invoke() reports failures in
-  // `error` rather than throwing, and they must not break lead creation.
-  const { error: notifyError } = await supabase.functions.invoke("lead-notification", {
-    body: { lead_id: leadId },
-  });
-  if (notifyError) console.warn("Lead notification failed (non-critical)", notifyError);
-
-  return { id: leadId };
 }

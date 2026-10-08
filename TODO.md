@@ -4,7 +4,7 @@ Open items from the code audit on 2026-10-03 and the security review on 2026-10-
 
 ## In progress
 
-- [ ] **Email an alert for every new lead.** `supabase/functions/lead-notification` only logs each enquiry, so new leads appear only in the admin dashboard. Decided 2026-10-07: send the alerts through Resend's free plan. Waiting on the Resend account and API key.
+- [ ] **Email an alert for every new lead.** `supabase/functions/submit-lead` only logs each enquiry until Resend is set up, so new leads appear only in the admin dashboard. Decided 2026-10-07: send the alerts through Resend's free plan. Waiting on the Resend account. Then set the `RESEND_API_KEY`, `FROM_EMAIL` and `ADMIN_EMAIL` secrets; as of 2026-10-08 none of them is set.
 
 ## Housekeeping
 
@@ -13,8 +13,15 @@ Open items from the code audit on 2026-10-03 and the security review on 2026-10-
 
 ## Security (from the 2026-10-08 review)
 
-- [ ] **Send one test lead** and confirm exactly one email arrives. The `notified_at` claim in `lead-notification` should stop repeat sends.
-- [ ] **Rate-limit or CAPTCHA the enquiry form.** Each lead now sends at most one email, but anyone can still file any number of leads. That can use up Resend's free 100 emails a day, so alerts for real leads stop. Cloudflare Turnstile is free. Verify its token in `lead-notification`, or in a small edge function that inserts the lead.
+- [ ] **Roll out the enquiry-form CAPTCHA, in this order.** Enquiries now go through the `submit-lead` edge function, which checks a Cloudflare Turnstile token before saving. Until both keys are set, it runs without the check.
+  1. `supabase functions deploy submit-lead`.
+  2. Push the site so the form calls `submit-lead`, and wait for Netlify to finish.
+  3. `supabase db push` (`20261008150000_leads_only_through_submit_lead.sql`), then `npm run db:snapshot`. This removes direct inserts into `leads`, so it must come after step 2.
+  4. `supabase functions delete lead-notification`.
+  5. In Cloudflare, add a Turnstile widget for `morgandevelopers.com`. Set `VITE_TURNSTILE_SITE_KEY` in Netlify's environment and redeploy.
+  6. Only then set the secret: `supabase secrets set TURNSTILE_SECRET_KEY=...`. Once it's set, enquiries without a valid token are refused.
+  7. Add Cloudflare Turnstile to the privacy policy (`src/lib/privacy-policy.ts`): it checks each enquiring visitor.
+- [ ] **Send one test lead after Resend is set up** and confirm exactly one email arrives.
 - [ ] **Limit view counting per visitor IP.** `log_property_view` counts any published listing, so anyone can inflate a view count by sending a new session ID with each request. A per-IP limit needs the real client IP from PostgREST's `request.headers`. Verify which header Supabase sets before relying on it, because `x-forwarded-for` can be spoofed by the client.
 - [ ] **Plan the major-version upgrades `npm audit fix` couldn't make.**
   - Tailwind 4 (`braces`/`micromatch` advisories, build-time only).
