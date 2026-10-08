@@ -66,14 +66,10 @@ export async function logPropertyView(propertyId: string): Promise<void> {
   if (wasRecentlyViewed(propertyId)) return;
 
   try {
-    const sessionId = getSessionId();
-    // The stored session is enough to tag the view; getUser() would add a round trip to the auth server.
-    const { data: { session } } = await supabase.auth.getSession();
-
+    // The function tags the view with the signed-in user itself.
     await supabase.rpc("log_property_view", {
       _property_id: propertyId,
-      _session_id: sessionId,
-      _user_id: session?.user.id,
+      _session_id: getSessionId(),
       _user_agent: navigator.userAgent.slice(0, 256),
     });
 

@@ -111,7 +111,7 @@ CREATE OR REPLACE FUNCTION "public"."has_role"("_user_id" "uuid", "_role" "publi
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
-  SELECT EXISTS (
+  SELECT coalesce(_user_id = auth.uid(), false) AND EXISTS (
     SELECT 1 FROM public.user_roles
     WHERE user_id = _user_id
       AND (
@@ -130,14 +130,14 @@ CREATE OR REPLACE FUNCTION "public"."log_property_view"("_property_id" "uuid", "
     SET "search_path" TO 'public'
     AS $$
 BEGIN
-  -- Insert the view record
-  INSERT INTO public.property_views (property_id, session_id, user_id, user_agent)
-  VALUES (_property_id, _session_id, _user_id, _user_agent);
-
-  -- Increment the cached count on properties
   UPDATE public.properties
   SET view_count = view_count + 1
-  WHERE id = _property_id;
+  WHERE id = _property_id AND status = 'published' AND is_deleted = false;
+
+  IF FOUND THEN
+    INSERT INTO public.property_views (property_id, session_id, user_id, user_agent)
+    VALUES (_property_id, left(_session_id, 64), auth.uid(), left(_user_agent, 256));
+  END IF;
 END;
 $$;
 
@@ -526,13 +526,9 @@ CREATE POLICY "Admins can view leads" ON "public"."leads" FOR SELECT TO "authent
 
 CREATE POLICY "Amenities are publicly readable" ON "public"."amenities" FOR SELECT USING (true);
 
-CREATE POLICY "Anyone can log a view" ON "public"."property_views" FOR INSERT TO "authenticated", "anon" WITH CHECK (true);
-
 CREATE POLICY "Anyone can submit a lead" ON "public"."leads" FOR INSERT TO "authenticated", "anon" WITH CHECK ((("char_length"(TRIM(BOTH FROM "name")) > 0) AND ("char_length"(TRIM(BOTH FROM "email")) > 2) AND ("email" ~* '^[^@]+@[^@]+\.[^@]+$'::"text") AND ("status" = 'new'::"public"."lead_status") AND ("notes" IS NULL) AND ("handled_by" IS NULL) AND ("notified_at" IS NULL)));
 
 CREATE POLICY "Authenticated users can create locations" ON "public"."locations" FOR INSERT TO "authenticated" WITH CHECK ((("char_length"(TRIM(BOTH FROM COALESCE("province", ''::"text"))) > 0) AND ("char_length"(TRIM(BOTH FROM COALESCE("district", ''::"text"))) > 0) AND ("char_length"(TRIM(BOTH FROM COALESCE("municipality_or_city", ''::"text"))) > 0)));
-
-CREATE POLICY "Authenticated users can insert audit logs" ON "public"."audit_logs" FOR INSERT TO "authenticated" WITH CHECK (("auth"."uid"() = "performed_by"));
 
 CREATE POLICY "Locations are publicly readable" ON "public"."locations" FOR SELECT USING (true);
 
@@ -547,6 +543,8 @@ CREATE POLICY "Property amenities are publicly readable" ON "public"."property_a
 CREATE POLICY "Public can view property images" ON "public"."property_images" FOR SELECT USING (true);
 
 CREATE POLICY "Public can view published properties" ON "public"."properties" FOR SELECT USING ((("status" = 'published'::"public"."property_status") AND ("is_deleted" = false)));
+
+CREATE POLICY "Staff can insert audit logs" ON "public"."audit_logs" FOR INSERT TO "authenticated" WITH CHECK ((("auth"."uid"() = "performed_by") AND "public"."has_role"("auth"."uid"(), 'moderator'::"public"."app_role")));
 
 CREATE POLICY "Super admins can manage roles" ON "public"."user_roles" TO "authenticated" USING ("public"."has_role"("auth"."uid"(), 'super_admin'::"public"."app_role")) WITH CHECK ("public"."has_role"("auth"."uid"(), 'super_admin'::"public"."app_role"));
 
@@ -711,7 +709,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 CREATE OR REPLACE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES ('property-images', 'property-images', true, 5242880, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
+VALUES ('property-images', 'property-images', true, 1048576, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
 ON CONFLICT (id) DO NOTHING;
 
 CREATE POLICY "Admins can delete property images" ON storage.objects AS PERMISSIVE FOR DELETE TO public
@@ -724,7 +722,9 @@ CREATE POLICY "Admins can upload property images" ON storage.objects AS PERMISSI
   WITH CHECK (((bucket_id = 'property-images'::text) AND public.has_role(auth.uid(), 'admin'::public.app_role)));
 
 CREATE POLICY "Authenticated users can upload to own folder" ON storage.objects AS PERMISSIVE FOR INSERT TO authenticated
-  WITH CHECK (((bucket_id = 'property-images'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text)));
+  WITH CHECK (((bucket_id = 'property-images'::text) AND ((storage.foldername(name))[1] = (auth.uid())::text) AND (( SELECT COALESCE(sum(((o.metadata ->> 'size'::text))::bigint), (0)::numeric) AS "coalesce"
+   FROM storage.objects o
+  WHERE ((o.bucket_id = 'property-images'::text) AND (o.name ~~ ((auth.uid())::text || '/%'::text)))) < (((50 * 1024) * 1024))::numeric)));
 
 CREATE POLICY "Public can view property images" ON storage.objects AS PERMISSIVE FOR SELECT TO public
   USING ((bucket_id = 'property-images'::text));
