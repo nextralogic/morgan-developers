@@ -74,6 +74,26 @@ CREATE TYPE "public"."property_type" AS ENUM (
 
 ALTER TYPE "public"."property_type" OWNER TO "postgres";
 
+CREATE OR REPLACE FUNCTION "public"."guard_property_public_id"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+  IF TG_OP = 'UPDATE' THEN
+    IF NEW.property_public_id IS DISTINCT FROM OLD.property_public_id THEN
+      RAISE EXCEPTION 'property_public_id cannot be changed';
+    END IF;
+  -- The column default has already taken its number from the sequence, so only a
+  -- number set by hand can be above the last one the sequence handed out.
+  ELSIF NEW.property_public_id > (SELECT last_value FROM public.property_public_id_seq) THEN
+    RAISE EXCEPTION 'property_public_id is assigned automatically';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+ALTER FUNCTION "public"."guard_property_public_id"() OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -236,7 +256,8 @@ CREATE TABLE IF NOT EXISTS "public"."leads" (
     "status" "public"."lead_status" DEFAULT 'new'::"public"."lead_status" NOT NULL,
     "notes" "text",
     "handled_by" "uuid",
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "notified_at" timestamp with time zone
 );
 
 ALTER TABLE "public"."leads" OWNER TO "postgres";
@@ -440,6 +461,8 @@ CREATE INDEX "idx_user_roles_user_id" ON "public"."user_roles" USING "btree" ("u
 
 CREATE UNIQUE INDEX "locations_address_unique" ON "public"."locations" USING "btree" (COALESCE("province", ''::"text"), COALESCE("district", ''::"text"), COALESCE("municipality_or_city", ''::"text"), COALESCE("ward", 0), COALESCE("area_name", ''::"text"));
 
+CREATE OR REPLACE TRIGGER "guard_property_public_id" BEFORE INSERT OR UPDATE OF "property_public_id" ON "public"."properties" FOR EACH ROW EXECUTE FUNCTION "public"."guard_property_public_id"();
+
 CREATE OR REPLACE TRIGGER "update_leads_updated_at" BEFORE UPDATE ON "public"."leads" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
 
 CREATE OR REPLACE TRIGGER "update_properties_updated_at" BEFORE UPDATE ON "public"."properties" FOR EACH ROW EXECUTE FUNCTION "public"."update_properties_updated_at"();
@@ -505,7 +528,7 @@ CREATE POLICY "Amenities are publicly readable" ON "public"."amenities" FOR SELE
 
 CREATE POLICY "Anyone can log a view" ON "public"."property_views" FOR INSERT TO "authenticated", "anon" WITH CHECK (true);
 
-CREATE POLICY "Anyone can submit a lead" ON "public"."leads" FOR INSERT TO "authenticated", "anon" WITH CHECK ((("char_length"(TRIM(BOTH FROM "name")) > 0) AND ("char_length"(TRIM(BOTH FROM "email")) > 2) AND ("email" ~* '^[^@]+@[^@]+\.[^@]+$'::"text")));
+CREATE POLICY "Anyone can submit a lead" ON "public"."leads" FOR INSERT TO "authenticated", "anon" WITH CHECK ((("char_length"(TRIM(BOTH FROM "name")) > 0) AND ("char_length"(TRIM(BOTH FROM "email")) > 2) AND ("email" ~* '^[^@]+@[^@]+\.[^@]+$'::"text") AND ("status" = 'new'::"public"."lead_status") AND ("notes" IS NULL) AND ("handled_by" IS NULL) AND ("notified_at" IS NULL)));
 
 CREATE POLICY "Authenticated users can create locations" ON "public"."locations" FOR INSERT TO "authenticated" WITH CHECK ((("char_length"(TRIM(BOTH FROM COALESCE("province", ''::"text"))) > 0) AND ("char_length"(TRIM(BOTH FROM COALESCE("district", ''::"text"))) > 0) AND ("char_length"(TRIM(BOTH FROM COALESCE("municipality_or_city", ''::"text"))) > 0)));
 
@@ -533,21 +556,21 @@ CREATE POLICY "Users can delete own properties" ON "public"."properties" FOR DEL
 
 CREATE POLICY "Users can delete own property amenities" ON "public"."property_amenities" FOR DELETE TO "authenticated" USING ((EXISTS ( SELECT 1
    FROM "public"."properties"
-  WHERE (("properties"."id" = "property_amenities"."property_id") AND ("properties"."created_by" = "auth"."uid"())))));
+  WHERE (("properties"."id" = "property_amenities"."property_id") AND ("properties"."created_by" = "auth"."uid"()) AND ("properties"."status" = 'draft'::"public"."property_status") AND ("properties"."is_deleted" = false)))));
 
 CREATE POLICY "Users can delete own property images" ON "public"."property_images" FOR DELETE TO "authenticated" USING ((EXISTS ( SELECT 1
    FROM "public"."properties"
-  WHERE (("properties"."id" = "property_images"."property_id") AND ("properties"."created_by" = "auth"."uid"())))));
+  WHERE (("properties"."id" = "property_images"."property_id") AND ("properties"."created_by" = "auth"."uid"()) AND ("properties"."status" = 'draft'::"public"."property_status") AND ("properties"."is_deleted" = false)))));
 
 CREATE POLICY "Users can insert own profile" ON "public"."profiles" FOR INSERT WITH CHECK (("auth"."uid"() = "id"));
 
 CREATE POLICY "Users can insert own property amenities" ON "public"."property_amenities" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."properties"
-  WHERE (("properties"."id" = "property_amenities"."property_id") AND ("properties"."created_by" = "auth"."uid"())))));
+  WHERE (("properties"."id" = "property_amenities"."property_id") AND ("properties"."created_by" = "auth"."uid"()) AND ("properties"."status" = 'draft'::"public"."property_status") AND ("properties"."is_deleted" = false)))));
 
 CREATE POLICY "Users can insert own property images" ON "public"."property_images" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."properties"
-  WHERE (("properties"."id" = "property_images"."property_id") AND ("properties"."created_by" = "auth"."uid"())))));
+  WHERE (("properties"."id" = "property_images"."property_id") AND ("properties"."created_by" = "auth"."uid"()) AND ("properties"."status" = 'draft'::"public"."property_status") AND ("properties"."is_deleted" = false)))));
 
 CREATE POLICY "Users can update own draft properties" ON "public"."properties" FOR UPDATE TO "authenticated" USING ((("auth"."uid"() = "created_by") AND ("status" = 'draft'::"public"."property_status") AND ("is_deleted" = false))) WITH CHECK ((("auth"."uid"() = "created_by") AND ("status" = 'draft'::"public"."property_status") AND ("is_deleted" = false)));
 
@@ -555,7 +578,9 @@ CREATE POLICY "Users can update own profile" ON "public"."profiles" FOR UPDATE U
 
 CREATE POLICY "Users can update own property images" ON "public"."property_images" FOR UPDATE TO "authenticated" USING ((EXISTS ( SELECT 1
    FROM "public"."properties"
-  WHERE (("properties"."id" = "property_images"."property_id") AND ("properties"."created_by" = "auth"."uid"())))));
+  WHERE (("properties"."id" = "property_images"."property_id") AND ("properties"."created_by" = "auth"."uid"()) AND ("properties"."status" = 'draft'::"public"."property_status") AND ("properties"."is_deleted" = false))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."properties"
+  WHERE (("properties"."id" = "property_images"."property_id") AND ("properties"."created_by" = "auth"."uid"()) AND ("properties"."status" = 'draft'::"public"."property_status") AND ("properties"."is_deleted" = false)))));
 
 CREATE POLICY "Users can view own profile" ON "public"."profiles" FOR SELECT USING (("auth"."uid"() = "id"));
 
@@ -587,6 +612,10 @@ GRANT USAGE ON SCHEMA "public" TO "postgres";
 GRANT USAGE ON SCHEMA "public" TO "anon";
 GRANT USAGE ON SCHEMA "public" TO "authenticated";
 GRANT USAGE ON SCHEMA "public" TO "service_role";
+
+GRANT ALL ON FUNCTION "public"."guard_property_public_id"() TO "anon";
+GRANT ALL ON FUNCTION "public"."guard_property_public_id"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."guard_property_public_id"() TO "service_role";
 
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "anon";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "authenticated";

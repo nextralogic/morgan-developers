@@ -45,16 +45,19 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // Fetch lead + property
+    // Claim the lead and read it in one statement, so a lead sends at most one
+    // notification however many times this function is called with its id.
     const { data: lead, error: leadErr } = await supabase
       .from("leads")
-      .select("*, properties(title, property_public_id)")
+      .update({ notified_at: new Date().toISOString() })
       .eq("id", lead_id)
-      .single();
+      .is("notified_at", null)
+      .select("*, properties(title, property_public_id)")
+      .maybeSingle();
 
     if (leadErr || !lead) {
-      console.error("Lead fetch error:", leadErr);
-      return new Response(JSON.stringify({ error: "Lead not found" }), {
+      if (leadErr) console.error("Lead fetch error:", leadErr);
+      return new Response(JSON.stringify({ error: "Lead not found or already notified" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

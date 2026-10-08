@@ -80,6 +80,7 @@ export type Database = {
           message: string | null
           name: string
           notes: string | null
+          notified_at: string | null
           phone: string | null
           preferred_contact_time: string | null
           property_id: string | null
@@ -96,6 +97,7 @@ export type Database = {
           message?: string | null
           name: string
           notes?: string | null
+          notified_at?: string | null
           phone?: string | null
           preferred_contact_time?: string | null
           property_id?: string | null
@@ -112,6 +114,7 @@ export type Database = {
           message?: string | null
           name?: string
           notes?: string | null
+          notified_at?: string | null
           phone?: string | null
           preferred_contact_time?: string | null
           property_id?: string | null
